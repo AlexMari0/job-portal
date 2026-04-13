@@ -8,7 +8,7 @@ export const clerkWebhooks = async (req, res) => {
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
     // Verifying Headers
-    await whook.verify(JSON.stringify(req.body), {
+    await whook.verify(req.body, {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
@@ -28,7 +28,7 @@ export const clerkWebhooks = async (req, res) => {
           resume: "",
         };
         await User.create(userData);
-        res.json({});
+        res.json({ success: true });
         break;
       }
 
@@ -40,13 +40,13 @@ export const clerkWebhooks = async (req, res) => {
         };
 
         await User.findByIdAndUpdate(data.id, userData);
-        res.json({});
+        res.json({ success: true });
         break;
       }
 
       case "user.deleted": {
         await User.findByIdAndDelete(data.id);
-        res.json({});
+        res.json({ success: true });
         break;
       }
       default:
@@ -54,6 +54,6 @@ export const clerkWebhooks = async (req, res) => {
     }
   } catch (error) {
     console.log(error.message);
-    res.json({ success: false, message: "Webhooks Error" });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
