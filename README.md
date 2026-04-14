@@ -171,6 +171,12 @@ Project ini dapat dideploy menggunakan:
 
 ---
 
+## 🌍 Live Demo
+
+- 🔗 Frontend: https://job-portal-client-mu-five.vercel.app/
+- 🔗 Backend API: https://job-portal-seven-azure-44.vercel.app/
+
+---
 ## 🤝 Contributing
 
 Contributions are welcome!
