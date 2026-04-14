@@ -9,7 +9,7 @@ const Navbar = () => {
   const { user } = useUser();
 
   const navigate = useNavigate();
-  const { setShowRecruiterLogin } = useContext(AppContext)
+  const { setShowRecruiterLogin, companyToken } = useContext(AppContext);
 
   return (
     <div className="shadow py-4">
@@ -31,7 +31,18 @@ const Navbar = () => {
           </div>
         ) : (
           <div className="flex gap-4 max-sm:text-xs">
-            <button onClick={(e)=>setShowRecruiterLogin(true)} className="text-gray-600">Recruiter Login</button>
+            <button
+              onClick={() => {
+                if (companyToken) {
+                  navigate("/dashboard");
+                } else {
+                  setShowRecruiterLogin(true);
+                }
+              }}
+              className="text-gray-600"
+            >
+              {companyToken ? "Dashboard" : "Recruiter Login"}
+            </button>
             <button
               onClick={() => openSignIn()}
               className="bg-blue-600 text-white px-6 sm:px-9 py-2 rounded-full"
