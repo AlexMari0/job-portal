@@ -1,7 +1,6 @@
 import Company from "../models/Company.js";
 import Job from "../models/Job.js";
-import JobApplication from "../models/JobApplication.js";
-import bcrypt from "bcrypt";
+import JobApplication, { STATUSES } from "../models/JobApplication.js";
 import jwt from "jsonwebtoken";
 import {
   ValidationError,
@@ -9,8 +8,6 @@ import {
   NotFoundError,
   ConflictError,
 } from "../utils/errors.js";
-
-const VALID_STATUSES = ["Pending", "Accepted", "Rejected"];
 
 function generateToken(id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -35,15 +32,12 @@ export async function register({ name, email, password, imagePath }, { uploadIma
     throw new ConflictError("Company already registered");
   }
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
   const imageUrl = await uploadImage(imagePath);
 
   const company = await Company.create({
     name,
     email,
-    password: hashedPassword,
+    password,
     image: imageUrl,
   });
 
@@ -60,7 +54,7 @@ export async function login({ email, password }) {
     throw new AuthError();
   }
 
-  const isMatch = await bcrypt.compare(password, company.password);
+  const isMatch = await company.comparePassword(password);
   if (!isMatch) {
     throw new AuthError();
   }
@@ -114,8 +108,8 @@ export async function getPostedJobs(companyId) {
 }
 
 export async function changeApplicationStatus({ applicationId, status, companyId }) {
-  if (!VALID_STATUSES.includes(status)) {
-    throw new ValidationError(`Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`);
+  if (!STATUSES.includes(status)) {
+    throw new ValidationError(`Invalid status. Must be one of: ${STATUSES.join(", ")}`);
   }
 
   const application = await JobApplication.findOneAndUpdate(
