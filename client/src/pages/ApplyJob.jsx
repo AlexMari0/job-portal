@@ -1,45 +1,33 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AppContext } from "../context/AppContext";
+import { AuthContext } from "../context/AuthContext";
+import { JobsContext } from "../context/JobsContext";
 import Loading from "../components/Loading";
 import Navbar from "../components/Navbar";
 import { assets } from "../assets/assets";
 import moment from "moment";
 import JobCard from "../components/JobCard";
 import Footer from "../components/Footer";
-import axios from "axios";
+import * as api from "../lib/api";
 import { toast } from "react-toastify";
-import { useAuth } from "@clerk/react";
 
 const ApplyJob = () => {
   const { id } = useParams();
-
-  const { getToken } = useAuth();
 
   const navigate = useNavigate();
 
   const [JobData, setJobData] = useState(null);
   const [isAlreadyApplied, setIsAlreadyApplied] = useState(false);
 
-  const {
-    jobs,
-    backendUrl,
-    userData,
-    userApplications,
-    fetchUserApplications,
-  } = useContext(AppContext);
+  const { userData } = useContext(AuthContext);
+  const { jobs, userApplications, fetchUserApplications } =
+    useContext(JobsContext);
 
   const fetchJob = async () => {
     try {
-      const { data } = await axios.get(backendUrl + `/api/jobs/${id}`);
-      if (data.success) {
-        setJobData(data.job);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
+      const data = await api.pub.get(`/api/jobs/${id}`);
+      setJobData(data.job);
+    } catch {}
   };
 
   const applyHandler = async () => {
@@ -53,23 +41,12 @@ const ApplyJob = () => {
         return toast.error("Upload resume to apply");
       }
 
-      const token = await getToken();
-
-      const { data } = await axios.post(
-        backendUrl + "/api/users/apply",
-        { jobId: JobData._id },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (data.success) {
-        toast.success(data.success);
-        fetchUserApplications();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
+      const data = await api.user.post("/api/users/apply", {
+        jobId: JobData._id,
+      });
+      toast.success(data.success);
+      fetchUserApplications();
+    } catch {}
   };
 
   const checkAlreadyApplied = () => {
@@ -167,11 +144,9 @@ const ApplyJob = () => {
                     job.companyId._id === JobData.companyId._id,
                 )
                 .filter((job) => {
-                  // Set of applied jobIds
                   const appliedJobsIds = new Set(
                     userApplications.map((app) => app.jobId && app.jobId._id),
                   );
-                  // Return true if the user has not already applied for this job
                   return !appliedJobsIds.has(job._id);
                 })
                 .slice(0, 4)

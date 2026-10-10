@@ -1,19 +1,15 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useContext } from "react";
-import { AppContext } from "../context/AppContext";
+import { AuthContext } from "../context/AuthContext";
 import { useEffect } from "react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { companyData, setCompanyData, setCompanyToken } =
-    useContext(AppContext);
+  const { companyData, logoutCompany } = useContext(AuthContext);
 
-  // Function to logout for company
   const logout = () => {
-    setCompanyToken(null);
-    localStorage.removeItem("companyToken");
-    setCompanyData(null);
+    logoutCompany();
     navigate("/");
   };
 

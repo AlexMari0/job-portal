@@ -1,11 +1,13 @@
 import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import { JobsContext } from "../context/JobsContext";
+import { SearchContext } from "../context/SearchContext";
 import { assets, JobCategories, JobLocations } from "../assets/assets";
 import JobCard from "./JobCard";
 
 const JobListing = () => {
-  const { isSearched, searchFilter, setSearchFilter, jobs } =
-    useContext(AppContext);
+  const { jobs } = useContext(JobsContext);
+  const { isSearched, searchFilter, setSearchFilter } =
+    useContext(SearchContext);
 
   const [showFilter, setShowFilter] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -169,7 +171,7 @@ const JobListing = () => {
           <div className="flex items-center justify-center space-x-2 mt-10">
             <a href="#job-list">
               <img
-                onClick={() => setCurrentPage(Math.max(currentPage - 1), 1)}
+                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                 src={assets.left_arrow_icon}
                 alt=""
               />
