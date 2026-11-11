@@ -21,6 +21,7 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 // so internal details never reach the client.
 func writeInternalError(w http.ResponseWriter, r *http.Request, err error) {
 	slog.Error("request failed", "method", r.Method, "path", r.URL.Path, "err", err)
+	reportError(r, err)
 	writeError(w, http.StatusInternalServerError, "internal_error", "Something went wrong")
 }
 

@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/clerk/clerk-sdk-go/v2 v2.8.0
 	github.com/cloudinary/cloudinary-go/v2 v2.16.1
+	github.com/getsentry/sentry-go v0.50.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/joho/godotenv v1.5.1
 	github.com/microcosm-cc/bluemonday v1.0.27

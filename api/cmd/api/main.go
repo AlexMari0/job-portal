@@ -15,6 +15,7 @@ import (
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/user"
+	"github.com/getsentry/sentry-go"
 
 	"github.com/AlexMari0/job-portal/api/internal/auth"
 	"github.com/AlexMari0/job-portal/api/internal/config"
@@ -32,6 +33,18 @@ func main() {
 
 func run() error {
 	cfg := config.Load()
+
+	// Error reporting first, so startup failures are reported too.
+	if err := sentry.Init(sentry.ClientOptions{
+		Dsn:         cfg.SentryDSN, // empty: SDK stays disabled
+		Environment: cfg.SentryEnvironment,
+	}); err != nil {
+		return fmt.Errorf("init sentry: %w", err)
+	}
+	defer sentry.Flush(2 * time.Second) // deliver queued events before exiting
+	if cfg.SentryDSN == "" {
+		slog.Info("SENTRY_DSN not set: errors are only logged")
+	}
 
 	// ctx is cancelled on Ctrl+C or SIGTERM (what Fly.io/Docker send on deploy).
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -79,14 +92,14 @@ func run() error {
 
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
-		Handler: handler.NewRouter(handler.Deps{
+		Handler: handler.Observe(handler.NewRouter(handler.Deps{
 			Store:              db,
 			ClerkWebhookSecret: cfg.ClerkWebhookSigningSecret,
 			CandidateAuth:      candidateAuth,
 			FetchClerkUser:     fetchClerkUser,
 			Uploader:           uploader,
 			CompanyTokens:      companyTokens,
-		}),
+		})),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

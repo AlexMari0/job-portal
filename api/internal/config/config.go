@@ -29,6 +29,10 @@ type Config struct {
 
 	// CompanyJWTSecret signs Company session tokens; empty disables Company sign-in.
 	CompanyJWTSecret string
+
+	// SentryDSN enables error reporting; empty (the local default) disables it.
+	SentryDSN         string
+	SentryEnvironment string
 }
 
 // Load reads api/.env if present (local development), then the process
@@ -50,6 +54,9 @@ func Load() Config {
 		CloudinaryAPISecret: os.Getenv("CLOUDINARY_API_SECRET"),
 
 		CompanyJWTSecret: os.Getenv("COMPANY_JWT_SECRET"),
+
+		SentryDSN:         os.Getenv("SENTRY_DSN"),
+		SentryEnvironment: getenv("SENTRY_ENVIRONMENT", "development"),
 	}
 }
 
