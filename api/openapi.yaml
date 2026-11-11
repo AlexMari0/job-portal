@@ -165,6 +165,50 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /companies:
+    post:
+      operationId: registerCompany
+      summary: Register a Company with a logo; signs it in
+      description: |
+        Validates text fields, then the logo, then that the email is free,
+        and only then uploads the logo, so failed sign-ups leave no files.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, email, password, image]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email, description: Stored lowercased }
+                password: { type: string, minLength: 6 }
+                image:
+                  type: string
+                  format: binary
+                  description: PNG, JPEG or WebP (detected from content), at most 1 MB
+      responses:
+        "201":
+          description: Registered and signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanySession" }
+        "400":
+          description: "Invalid text fields (validation_failed) or logo (invalid_file, fields.image)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: "Email already registered (code: email_taken)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: "Uploads or Company sign-in not configured"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /companies/login:
     post:
       operationId: loginCompany

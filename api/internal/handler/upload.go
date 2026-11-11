@@ -36,9 +36,7 @@ const multipartOverhead = 64 << 10
 // entirely in memory (no temp files). The type is detected from the bytes,
 // so renaming a .png to .pdf does not get it accepted.
 func readFile(w http.ResponseWriter, r *http.Request, rule fileRule) ([]byte, error) {
-	limit := rule.maxBytes + multipartOverhead
-	r.Body = http.MaxBytesReader(w, r.Body, limit)
-	if err := r.ParseMultipartForm(limit); err != nil {
+	if err := parseMultipart(w, r, rule.maxBytes); err != nil {
 		return nil, errInvalidFile // malformed, or larger than the limit
 	}
 	defer r.MultipartForm.RemoveAll()
@@ -65,4 +63,16 @@ func writeInvalidFile(w http.ResponseWriter, rule fileRule) {
 		Message: "The file was rejected",
 		Fields:  map[string]string{rule.field: rule.message},
 	}})
+}
+
+// parseMultipart parses a multipart request whose file is at most
+// maxFileBytes, keeping everything in memory. Parsing twice is a no-op, so
+// handlers can read text fields first and the file afterwards.
+func parseMultipart(w http.ResponseWriter, r *http.Request, maxFileBytes int64) error {
+	if r.MultipartForm != nil {
+		return nil
+	}
+	limit := maxFileBytes + multipartOverhead
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
+	return r.ParseMultipartForm(limit)
 }

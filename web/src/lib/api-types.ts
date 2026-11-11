@@ -129,6 +129,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/companies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a Company with a logo; signs it in
+         * @description Validates text fields, then the logo, then that the email is free,
+         *     and only then uploads the logo, so failed sign-ups leave no files.
+         */
+        post: operations["registerCompany"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/companies/login": {
         parameters: {
             query?: never;
@@ -634,6 +655,70 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             /** @description Uploads not configured (code: uploads_not_configured) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    registerCompany: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    name: string;
+                    /**
+                     * Format: email
+                     * @description Stored lowercased
+                     */
+                    email: string;
+                    password: string;
+                    /**
+                     * Format: binary
+                     * @description PNG, JPEG or WebP (detected from content), at most 1 MB
+                     */
+                    image: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Registered and signed in */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanySession"];
+                };
+            };
+            /** @description Invalid text fields (validation_failed) or logo (invalid_file, fields.image) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Email already registered (code: email_taken) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Uploads or Company sign-in not configured */
             503: {
                 headers: {
                     [name: string]: unknown;

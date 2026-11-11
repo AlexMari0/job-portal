@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ApiError } from "@/lib/api";
-import { COMPANY_COOKIE, loginCompany, type CompanySession } from "@/lib/company";
+import { COMPANY_COOKIE, loginCompany, registerCompany, type CompanySession } from "@/lib/company";
 
 export type LoginState = { error: string | null };
 
@@ -28,6 +28,27 @@ export async function loginCompanyAction(_prev: LoginState, formData: FormData):
     throw err;
   }
   redirect("/dashboard"); // outside try: redirect() works by throwing
+}
+
+export type RegisterResult = { ok: false; code: string; message: string; fields: Record<string, string> };
+
+// Forwards the sign-up form (with the logo file) to the Go API; on success
+// signs the Company in and redirects, otherwise returns what went wrong.
+export async function registerCompanyAction(formData: FormData): Promise<RegisterResult> {
+  const form = new FormData();
+  for (const key of ["name", "email", "password", "image"]) {
+    const value = formData.get(key);
+    if (value !== null) form.append(key, value);
+  }
+  try {
+    await startSession(await registerCompany(form));
+  } catch (err) {
+    if (err instanceof ApiError && err.status < 500) {
+      return { ok: false, code: err.code, message: err.message, fields: err.fields };
+    }
+    throw err;
+  }
+  redirect("/dashboard");
 }
 
 export async function logoutCompanyAction() {

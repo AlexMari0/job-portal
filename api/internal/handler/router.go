@@ -57,6 +57,9 @@ func NewRouter(d Deps) http.Handler {
 	if d.CompanyTokens != nil {
 		company := d.CompanyTokens.Middleware(Unauthenticated)
 		mux.Handle("POST /companies/login", LoginCompany(d.Store, d.CompanyTokens))
+		mux.Handle("POST /companies", withUploads(d.Uploader, func(up Uploader) http.Handler {
+			return RegisterCompany(d.Store, d.CompanyTokens, up)
+		}))
 		mux.Handle("GET /company", company(GetCurrentCompany(d.Store)))
 		mux.Handle("GET /company/jobs", company(ListCompanyJobs(d.Store)))
 		mux.Handle("POST /company/jobs", company(CreateJob(d.Store)))
@@ -66,6 +69,7 @@ func NewRouter(d Deps) http.Handler {
 	} else {
 		off := unavailable("company_auth_not_configured", "Company sign-in is not configured")(nil)
 		mux.Handle("POST /companies/login", off)
+		mux.Handle("POST /companies", off)
 		mux.Handle("GET /company", off)
 		mux.Handle("/company/", off)
 	}

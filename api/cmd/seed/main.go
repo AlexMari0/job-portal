@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/AlexMari0/job-portal/api/internal/config"
@@ -151,6 +153,21 @@ func run() error {
 			return fmt.Errorf("insert %s: %w", in.collection, err)
 		}
 		slog.Info("seeded", "collection", in.collection, "count", len(in.docs))
+	}
+
+	// The indexes Mongoose creates from the schemas (unique emails, foreign
+	// keys), so local behaviour matches production, e.g. duplicate sign-ups.
+	unique := options.Index().SetUnique(true)
+	indexes := map[string][]mongo.IndexModel{
+		store.UsersCollection:           {{Keys: bson.D{{Key: "email", Value: 1}}, Options: unique}},
+		store.CompaniesCollection:       {{Keys: bson.D{{Key: "email", Value: 1}}, Options: unique}},
+		store.JobsCollection:            {{Keys: bson.D{{Key: "companyId", Value: 1}}}},
+		store.JobApplicationsCollection: {{Keys: bson.D{{Key: "companyId", Value: 1}}}, {Keys: bson.D{{Key: "jobId", Value: 1}}}},
+	}
+	for collection, models := range indexes {
+		if _, err := s.DB.Collection(collection).Indexes().CreateMany(ctx, models); err != nil {
+			return fmt.Errorf("create indexes on %s: %w", collection, err)
+		}
 	}
 
 	slog.Info("done", "company_password", samplePassword)

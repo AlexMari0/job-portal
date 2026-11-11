@@ -29,6 +29,11 @@ export function loginCompany(email: string, password: string): Promise<CompanySe
   });
 }
 
+/** Registers a Company (multipart with the logo); returns a session token. */
+export function registerCompany(form: FormData): Promise<CompanySession> {
+  return apiFetch<CompanySession>("/companies", { method: "POST", body: form });
+}
+
 /** Whether a Company session cookie exists (it may still be expired). */
 export async function hasCompanySession(): Promise<boolean> {
   return (await cookies()).has(COMPANY_COOKIE);
