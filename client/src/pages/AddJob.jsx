@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Quill from "quill";
 import { JobCategories, JobLocations } from "../assets/assets";
-import axios from "axios";
-import { useContext } from "react";
-import { AppContext } from "../context/AppContext";
+import * as api from "../lib/api";
 import { toast } from "react-toastify";
 
 const AddJob = () => {
@@ -16,33 +14,26 @@ const AddJob = () => {
   const editorRef = useRef(null);
   const quillRef = useRef(null);
 
-  const { backendUrl, companyToken } = useContext(AppContext);
-
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
       const description = quillRef.current.root.innerHTML;
-      const { data } = await axios.post(
-        backendUrl + "/api/company/post-job",
-        { title, description, location, salary, category, level },
-        { headers: { token: companyToken } },
-      );
-
-      if (data.success) {
-        toast.success(data.message);
-        setTitle("");
-        setSalary(0);
-        quillRef.current.root.innerHTML = "";
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
+      const data = await api.company.post("/api/company/post-job", {
+        title,
+        description,
+        location,
+        salary,
+        category,
+        level,
+      });
+      toast.success(data.message);
+      setTitle("");
+      setSalary(0);
+      quillRef.current.root.innerHTML = "";
+    } catch {}
   };
 
   useEffect(() => {
-    // Initiate Quill only once
     if (!quillRef.current && editorRef.current) {
       quillRef.current = new Quill(editorRef.current, {
         theme: "snow",

@@ -1,57 +1,30 @@
-import { assets, viewApplicationsPageData } from "../assets/assets";
-import { useContext } from "react";
-import { AppContext } from "../context/AppContext";
+import { assets } from "../assets/assets";
 import { useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
 import { useEffect } from "react";
+import * as api from "../lib/api";
+import { toast } from "react-toastify";
 import Loading from "../components/Loading";
 
 const ViewApplications = () => {
-  const { backendUrl, companyToken } = useContext(AppContext);
-
   const [applicants, setApplicants] = useState(false);
 
-  // Function to fetch company Job Applications data
   const fetchCompanyJobApplications = async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/company/applicants", {
-        headers: { token: companyToken },
-      });
-
-      if (data.success) {
-        setApplicants(data.applications.reverse());
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
+      const data = await api.company.get("/api/company/applicants");
+      setApplicants(data.applications.reverse());
+    } catch {}
   };
 
-  // Function to update job applications status
   const changeJobApplicationStatus = async (id, status) => {
     try {
-      const { data } = await axios.post(
-        backendUrl + "/api/company/change-status",
-        { id, status },
-        { headers: { token: companyToken } },
-      );
-      if (data.success) {
-        fetchCompanyJobApplications();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
+      await api.company.post("/api/company/change-status", { id, status });
+      fetchCompanyJobApplications();
+    } catch {}
   };
 
   useEffect(() => {
-    if (companyToken) {
-      fetchCompanyJobApplications();
-    }
-  }, [companyToken]);
+    fetchCompanyJobApplications();
+  }, []);
 
   return applicants ? (
     applicants.length === 0 ? (

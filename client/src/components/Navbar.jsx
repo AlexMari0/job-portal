@@ -2,14 +2,14 @@ import { assets } from "../assets/assets";
 import { useClerk, UserButton, useUser } from "@clerk/react";
 import { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AppContext } from "../context/AppContext";
+import { AuthContext } from "../context/AuthContext";
 
 const Navbar = () => {
   const { openSignIn } = useClerk();
   const { user } = useUser();
 
   const navigate = useNavigate();
-  const { setShowRecruiterLogin, companyToken } = useContext(AppContext);
+  const { setShowRecruiterLogin, companyToken } = useContext(AuthContext);
 
   return (
     <div className="shadow py-4">

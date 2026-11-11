@@ -11,6 +11,7 @@ import connectCloudinary from "./config/cloudinary.js";
 import companyRouter from "./routes/companyRoutes.js";
 import jobRouter from "./routes/jobRoutes.js";
 import userRouter from "./routes/userRoutes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 // Initialize Express
 const app = express();
@@ -34,10 +35,11 @@ app.use("/api/company", companyRouter);
 app.use("/api/jobs", jobRouter);
 app.use("/api/users", userRouter);
 
+Sentry.setupExpressErrorHandler(app);
+app.use(errorHandler);
+
 // Port
 const PORT = process.env.PORT || 5001;
-
-Sentry.setupExpressErrorHandler(app);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -1,9 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { assets } from "../assets/assets";
-import { AppContext } from "../context/AppContext";
-import axios from "axios";
+import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import * as api from "../lib/api";
 
 const RecruiterLogin = () => {
   const navigate = useNavigate();
@@ -16,8 +15,7 @@ const RecruiterLogin = () => {
 
   const [isTextDataSubmited, setIsTextDataSubmited] = useState(false);
 
-  const { setShowRecruiterLogin, backendUrl, setCompanyToken, setCompanyData } =
-    useContext(AppContext);
+  const { setShowRecruiterLogin, loginCompany } = useContext(AuthContext);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -27,19 +25,13 @@ const RecruiterLogin = () => {
 
     try {
       if (state === "Login") {
-        const { data } = await axios.post(backendUrl + "/api/company/login", {
+        const data = await api.company.post("/api/company/login", {
           email,
           password,
         });
-        if (data.success) {
-          setCompanyData(data.company);
-          setCompanyToken(data.token);
-          localStorage.setItem("companyToken", data.token);
-          setShowRecruiterLogin(false);
-          navigate("/dashboard");
-        } else {
-          toast.error(data.message);
-        }
+        loginCompany(data.token, data.company);
+        setShowRecruiterLogin(false);
+        navigate("/dashboard");
       } else {
         const formData = new FormData();
         formData.append("name", name);
@@ -47,24 +39,12 @@ const RecruiterLogin = () => {
         formData.append("email", email);
         formData.append("image", image);
 
-        const { data } = await axios.post(
-          backendUrl + "/api/company/register",
-          formData,
-        );
-
-        if (data.success) {
-          setCompanyData(data.company);
-          setCompanyToken(data.token);
-          localStorage.setItem("companyToken", data.token);
-          setShowRecruiterLogin(false);
-          navigate("/dashboard");
-        } else {
-          toast.error(data.message);
-        }
+        const data = await api.pub.post("/api/company/register", formData);
+        loginCompany(data.token, data.company);
+        setShowRecruiterLogin(false);
+        navigate("/dashboard");
       }
-    } catch (error) {
-      toast.error(error.message);
-    }
+    } catch {}
   };
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import ApplyJob from "./pages/ApplyJob";
 import Applications from "./pages/Applications";
 import RecruiterLogin from "./components/RecruiterLogin";
 import { useContext } from "react";
-import { AppContext } from "./context/AppContext";
+import { AuthContext } from "./context/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import AddJob from "./pages/AddJob";
 import ManageJobs from "./pages/ManageJobs";
@@ -14,7 +14,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const App = () => {
-  const { showRecruiterLogin, companyToken } = useContext(AppContext);
+  const { showRecruiterLogin, companyToken } = useContext(AuthContext);
 
   return (
     <div>
