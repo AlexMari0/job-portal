@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -5,8 +6,9 @@ import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
 import Navbar from "@/components/Navbar";
-import { getJob, getJobs, type Job } from "@/lib/api";
+import { getJob, getJobs, getMe, getMyApplications, type Job } from "@/lib/api";
 import { timeAgo } from "@/lib/jobs";
+import ApplyButton from "./ApplyButton";
 
 export async function generateMetadata({ params }: PageProps<"/jobs/[id]">): Promise<Metadata> {
   const job = await getJob((await params).id);
@@ -29,8 +31,14 @@ export default function JobPage({ params }: PageProps<"/jobs/[id]">) {
 
 async function JobDetail({ params }: { params: PageProps<"/jobs/[id]">["params"] }) {
   const { id } = await params;
-  const job = await getJob(id);
+  // Independent requests run in parallel.
+  const [job, session, me, applications] = await Promise.all([getJob(id), auth(), getMe(), getMyApplications()]);
   if (!job) notFound(); // unknown or Hidden Job → 404 page
+
+  const appliedJobIds = new Set(applications.map((a) => a.job.id));
+  const apply = (
+    <ApplyButton jobId={job.id} signedIn={session.userId !== null} hasResume={!!me?.resume} alreadyApplied={appliedJobIds.has(job.id)} />
+  );
 
   return (
     <div className="min-h-screen flex flex-col py-10 container px-4 2xl:px-20 mx-auto">
@@ -55,7 +63,7 @@ async function JobDetail({ params }: { params: PageProps<"/jobs/[id]">["params"]
             </div>
           </div>
           <div className="flex flex-col justify-center text-end text-sm max-md:mx-auto max-md:text-center">
-            <ApplyButton />
+            {apply}
             <p className="mt-1 text-gray-600">Posted: {timeAgo(job.postedAt)}</p>
           </div>
         </div>
@@ -65,21 +73,20 @@ async function JobDetail({ params }: { params: PageProps<"/jobs/[id]">["params"]
             <h2 className="font-bold text-2xl mb-4">Job Description</h2>
             {/* Safe: the Go API sanitizes description HTML with an allowlist. */}
             <div className="rich-text" dangerouslySetInnerHTML={{ __html: job.description }} />
-            <div className="mt-10">
-              <ApplyButton />
-            </div>
+            <div className="mt-10">{apply}</div>
           </div>
-          <MoreJobs job={job} />
+          <MoreJobs job={job} appliedJobIds={appliedJobIds} />
         </div>
       </div>
     </div>
   );
 }
 
-// Same Company's other Jobs, at most 4. Hiding Jobs the Candidate already
-// applied to comes with the Candidate slice.
-async function MoreJobs({ job }: { job: Job }) {
-  const more = (await getJobs()).filter((j) => j.id !== job.id && j.company.id === job.company.id).slice(0, 4);
+// Same Company's other Jobs the Candidate has not applied to, at most 4.
+async function MoreJobs({ job, appliedJobIds }: { job: Job; appliedJobIds: Set<string> }) {
+  const more = (await getJobs())
+    .filter((j) => j.id !== job.id && j.company.id === job.company.id && !appliedJobIds.has(j.id))
+    .slice(0, 4);
   return (
     <div className="w-full lg:w-1/3 mt-8 lg:mt-0 lg:ml-8 space-y-5">
       <h2>More jobs from {job.company.name}</h2>
@@ -87,15 +94,6 @@ async function MoreJobs({ job }: { job: Job }) {
         <JobCard key={j.id} job={j} />
       ))}
     </div>
-  );
-}
-
-// Wired to POST /jobs/{id}/applications in the Candidate slice.
-function ApplyButton() {
-  return (
-    <button type="button" className="bg-blue-600 p-2.5 px-10 text-white rounded-sm">
-      Apply Now
-    </button>
   );
 }
 

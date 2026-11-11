@@ -28,23 +28,32 @@ type clerkEvent struct {
 	Data json.RawMessage `json:"data"`
 }
 
-// clerkUser holds the fields we read from a Clerk user object.
+// ClerkEmailAddress is one entry of a Clerk user's email_addresses.
+type ClerkEmailAddress struct {
+	ID           string `json:"id"`
+	EmailAddress string `json:"email_address"`
+}
+
+// ClerkUser holds the fields we read from a Clerk user object (webhook
+// payloads and the Clerk Backend API use the same JSON shape).
 // first_name/last_name are pointers because Clerk sends null for missing names.
-type clerkUser struct {
-	ID                    string  `json:"id"`
-	FirstName             *string `json:"first_name"`
-	LastName              *string `json:"last_name"`
-	ImageURL              string  `json:"image_url"`
-	PrimaryEmailAddressID string  `json:"primary_email_address_id"`
-	EmailAddresses        []struct {
-		ID           string `json:"id"`
-		EmailAddress string `json:"email_address"`
-	} `json:"email_addresses"`
+type ClerkUser struct {
+	ID                    string              `json:"id"`
+	FirstName             *string             `json:"first_name"`
+	LastName              *string             `json:"last_name"`
+	ImageURL              string              `json:"image_url"`
+	PrimaryEmailAddressID string              `json:"primary_email_address_id"`
+	EmailAddresses        []ClerkEmailAddress `json:"email_addresses"`
+}
+
+// Profile converts the Clerk user into what we store for a Candidate.
+func (u ClerkUser) Profile() store.CandidateProfile {
+	return store.CandidateProfile{ID: u.ID, Name: u.displayName(), Email: u.primaryEmail(), Image: u.ImageURL}
 }
 
 // primaryEmail returns the address Clerk marks as primary (not just the
 // first one), lowercased like the Mongoose schema did.
-func (u clerkUser) primaryEmail() string {
+func (u ClerkUser) primaryEmail() string {
 	for _, e := range u.EmailAddresses {
 		if e.ID == u.PrimaryEmailAddressID {
 			return strings.ToLower(e.EmailAddress)
@@ -58,7 +67,7 @@ func (u clerkUser) primaryEmail() string {
 
 // displayName joins the name parts that exist; with no name at all it
 // falls back to the part of the email before "@" (the schema requires a name).
-func (u clerkUser) displayName() string {
+func (u ClerkUser) displayName() string {
 	var parts []string
 	for _, p := range []*string{u.FirstName, u.LastName} {
 		if p != nil && strings.TrimSpace(*p) != "" {
@@ -103,7 +112,7 @@ func ClerkWebhook(secret string, candidates CandidateSyncer) http.Handler {
 			writeError(w, http.StatusBadRequest, "invalid_body", "Webhook body is not valid JSON")
 			return
 		}
-		var user clerkUser
+		var user ClerkUser
 		if err := json.Unmarshal(ev.Data, &user); err != nil || user.ID == "" {
 			// Not a user payload: nothing for us to do.
 			w.WriteHeader(http.StatusOK)
@@ -112,9 +121,7 @@ func ClerkWebhook(secret string, candidates CandidateSyncer) http.Handler {
 
 		switch ev.Type {
 		case "user.created", "user.updated":
-			err = candidates.UpsertCandidate(r.Context(), store.CandidateProfile{
-				ID: user.ID, Name: user.displayName(), Email: user.primaryEmail(), Image: user.ImageURL,
-			})
+			err = candidates.UpsertCandidate(r.Context(), user.Profile())
 		case "user.deleted":
 			err = candidates.DeleteCandidate(r.Context(), user.ID)
 		default:

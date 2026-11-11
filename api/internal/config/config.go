@@ -16,6 +16,11 @@ type Config struct {
 	// ClerkWebhookSigningSecret verifies Clerk webhooks (Clerk dashboard →
 	// Webhooks → endpoint → Signing Secret, "whsec_..."). Optional locally.
 	ClerkWebhookSigningSecret string
+
+	// ClerkSecretKey verifies Candidate session tokens ("sk_test_..." / "sk_live_...").
+	ClerkSecretKey string
+	// WebOrigin is the Next.js site's origin; Clerk tokens must be issued for it (azp).
+	WebOrigin string
 }
 
 // Load reads api/.env if present (local development), then the process
@@ -29,6 +34,8 @@ func Load() Config {
 		MongoDB:  getenv("MONGODB_DB", "job-portal"),
 
 		ClerkWebhookSigningSecret: os.Getenv("CLERK_WEBHOOK_SIGNING_SECRET"),
+		ClerkSecretKey:            os.Getenv("CLERK_SECRET_KEY"),
+		WebOrigin:                 getenv("WEB_ORIGIN", "http://localhost:3000"),
 	}
 }
 

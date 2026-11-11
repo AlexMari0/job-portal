@@ -58,6 +58,73 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /jobs/{id}/applications:
+    post:
+      operationId: applyToJob
+      summary: Apply to a visible Job as the signed-in Candidate
+      security: [{ clerkSession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "201":
+          description: Application created with status Pending
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Application" }
+        "400":
+          description: "Candidate has no resume (code: resume_required)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404":
+          description: "Unknown or Hidden Job (job_not_found), or Candidate not synced from Clerk yet (candidate_not_found)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: "Already applied to this Job (code: already_applied)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /me:
+    get:
+      operationId: getMe
+      summary: The signed-in Candidate
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: The Candidate
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Candidate" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404":
+          description: "Not synced from Clerk yet (code: candidate_not_found)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /me/applications:
+    get:
+      operationId: listMyApplications
+      summary: The signed-in Candidate's Applications, newest first
+      description: Includes Applications to Hidden Jobs; leaves out ones whose Job or Company was deleted.
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Application" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+
   /webhooks/clerk:
     post:
       operationId: clerkWebhook
@@ -86,7 +153,58 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
 
 components:
+  securitySchemes:
+    clerkSession:
+      type: http
+      scheme: bearer
+      description: Clerk session token of a Candidate, issued for WEB_ORIGIN (azp)
+
+  responses:
+    Unauthenticated:
+      description: "Missing or invalid session token (code: unauthenticated)"
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
   schemas:
+    Candidate:
+      type: object
+      required: [id, name, email, image, resume]
+      properties:
+        id: { type: string, description: Clerk user id }
+        name: { type: string }
+        email: { type: string, format: email }
+        image: { type: string, format: uri }
+        resume:
+          type: [string, "null"]
+          format: uri
+          description: Resume URL, null until the first upload
+
+    JobSummary:
+      type: object
+      required: [id, title, location, category, level, salary]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        location: { $ref: "#/components/schemas/Location" }
+        category: { $ref: "#/components/schemas/Category" }
+        level: { $ref: "#/components/schemas/Level" }
+        salary: { type: integer, minimum: 0 }
+
+    ApplicationStatus:
+      type: string
+      enum: [Pending, Accepted, Rejected]
+
+    Application:
+      type: object
+      required: [id, status, appliedAt, job, company]
+      properties:
+        id: { type: string }
+        status: { $ref: "#/components/schemas/ApplicationStatus" }
+        appliedAt: { type: string, format: date-time }
+        job: { $ref: "#/components/schemas/JobSummary" }
+        company: { $ref: "#/components/schemas/CompanySummary" }
+
     Health:
       type: object
       required: [status, database]

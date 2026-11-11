@@ -10,10 +10,12 @@
     "gen:api": "openapi-typescript ../api/openapi.yaml -o src/lib/api-types.ts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.25",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "sonner": "^2.0.8"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",

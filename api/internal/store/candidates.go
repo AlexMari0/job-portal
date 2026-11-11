@@ -2,9 +2,11 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
@@ -47,4 +49,27 @@ func (s *Store) DeleteCandidate(ctx context.Context, id string) error {
 		return fmt.Errorf("delete candidate %s: %w", id, err)
 	}
 	return nil
+}
+
+// Candidate mirrors a document in the users collection.
+type Candidate struct {
+	ID     string `bson:"_id"` // Clerk user id
+	Name   string `bson:"name"`
+	Email  string `bson:"email"`
+	Image  string `bson:"image"`
+	Resume string `bson:"resume"` // Cloudinary URL, or "" before the first upload
+}
+
+// GetCandidate returns the Candidate with the given Clerk user id, or
+// ErrNotFound when the Clerk webhook has not created it (yet).
+func (s *Store) GetCandidate(ctx context.Context, id string) (Candidate, error) {
+	var c Candidate
+	err := s.DB.Collection(UsersCollection).FindOne(ctx, bson.D{{Key: "_id", Value: id}}).Decode(&c)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return Candidate{}, ErrNotFound
+	}
+	if err != nil {
+		return Candidate{}, fmt.Errorf("get candidate %s: %w", id, err)
+	}
+	return c, nil
 }

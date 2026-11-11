@@ -6,10 +6,21 @@ import (
 	"github.com/AlexMari0/job-portal/api/internal/store"
 )
 
+// Middleware wraps a handler, e.g. to require authentication.
+type Middleware func(http.Handler) http.Handler
+
 // Deps is everything the routes need.
 type Deps struct {
 	Store              *store.Store
 	ClerkWebhookSecret string // empty disables POST /webhooks/clerk (503)
+
+	// CandidateAuth requires a signed-in Candidate and puts their id in the
+	// request context (auth.ClerkCandidate in production, a fake in tests).
+	// Nil disables the Candidate routes (503).
+	CandidateAuth Middleware
+	// FetchClerkUser creates a missing Candidate document from Clerk on
+	// demand. Nil: rely on the webhook only.
+	FetchClerkUser FetchClerkUser
 }
 
 // NewRouter wires every route in the API contract (api/openapi.yaml).
@@ -18,10 +29,36 @@ func NewRouter(d Deps) http.Handler {
 	// r.PathValue("id") reads the {id} segment.
 	mux := http.NewServeMux()
 
+	candidate := d.CandidateAuth
+	if candidate == nil {
+		candidate = unavailable("auth_not_configured", "Candidate sign-in is not configured")
+	}
+
 	mux.Handle("GET /health", Health(d.Store))
 	mux.Handle("GET /jobs", ListJobs(d.Store))
 	mux.Handle("GET /jobs/{id}", GetJob(d.Store))
+
+	// Candidate routes: Clerk session token required.
+	mux.Handle("GET /me", candidate(GetMe(d.Store, d.FetchClerkUser)))
+	mux.Handle("GET /me/applications", candidate(ListMyApplications(d.Store)))
+	mux.Handle("POST /jobs/{id}/applications", candidate(ApplyToJob(d.Store, d.FetchClerkUser)))
+
 	mux.Handle("POST /webhooks/clerk", ClerkWebhook(d.ClerkWebhookSecret, d.Store))
 
 	return mux
+}
+
+// Unauthenticated answers 401 in the contract's error format; used when a
+// Clerk session token is missing or invalid.
+var Unauthenticated http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	writeError(w, http.StatusUnauthorized, "unauthenticated", "Sign in required")
+})
+
+// unavailable is middleware that rejects every request with 503.
+func unavailable(code, message string) Middleware {
+	return func(http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			writeError(w, http.StatusServiceUnavailable, code, message)
+		})
+	}
 }

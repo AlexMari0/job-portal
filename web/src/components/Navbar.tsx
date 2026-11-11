@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
+import NavAuth from "./NavAuth";
 
-// The login buttons are wired up in later slices (Candidate login via Clerk,
-// Company login via the Recruiter Login modal).
 export default function Navbar() {
   return (
     <div className="shadow-sm py-4">
@@ -10,14 +10,10 @@ export default function Navbar() {
         <Link href="/">
           <Image src="/assets/logo.svg" alt="Job Portal" width={160} height={40} priority />
         </Link>
-        <div className="flex gap-4 max-sm:text-xs">
-          <button type="button" className="text-gray-600">
-            Recruiter Login
-          </button>
-          <button type="button" className="bg-blue-600 text-white px-6 sm:px-9 py-2 rounded-full">
-            Login
-          </button>
-        </div>
+        {/* Session-dependent UI must sit inside Suspense with Cache Components. */}
+        <Suspense fallback={<div className="h-10" />}>
+          <NavAuth />
+        </Suspense>
       </div>
     </div>
   );
