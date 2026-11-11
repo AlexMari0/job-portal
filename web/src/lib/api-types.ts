@@ -198,6 +198,43 @@ export interface paths {
         patch: operations["updateJobVisibility"];
         trace?: never;
     };
+    "/company/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Applications to the signed-in Company's Jobs, newest first
+         * @description Leaves out Applications whose Candidate or Job no longer exists.
+         */
+        get: operations["listCompanyApplications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/company/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the status of an Application to one of the Company's Jobs */
+        patch: operations["updateApplicationStatus"];
+        trace?: never;
+    };
     "/webhooks/clerk": {
         parameters: {
             query?: never;
@@ -276,6 +313,21 @@ export interface components {
             postedAt: string;
             visible: boolean;
             applicationCount: number;
+        };
+        CompanyApplication: {
+            id: string;
+            status: components["schemas"]["ApplicationStatus"];
+            /** Format: date-time */
+            appliedAt: string;
+            candidate: {
+                id: string;
+                name: string;
+                /** Format: uri */
+                image: string;
+                /** Format: uri */
+                resume: string | null;
+            };
+            job: components["schemas"]["JobSummary"];
         };
         JobSummary: {
             id: string;
@@ -761,6 +813,72 @@ export interface operations {
                 };
             };
             /** @description Unknown Job (code: job_not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCompanyApplications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applications */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyApplication"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    updateApplicationStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    status: components["schemas"]["ApplicationStatus"];
+                };
+            };
+        };
+        responses: {
+            /** @description Status updated */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown status (code: validation_failed) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Unknown, or another Company's, Application (code: application_not_found) */
             404: {
                 headers: {
                     [name: string]: unknown;

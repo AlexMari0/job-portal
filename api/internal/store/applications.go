@@ -104,3 +104,60 @@ func (s *Store) ListCandidateApplications(ctx context.Context, candidateID strin
 	}
 	return apps, nil
 }
+
+// CompanyApplication is an Application joined with its Candidate and Job,
+// as the Company that posted the Job sees it.
+type CompanyApplication struct {
+	Application `bson:",inline"`
+	Candidate   Candidate `bson:"candidate"`
+	Job         Job       `bson:"job"`
+}
+
+// ListCompanyApplications returns Applications to the Company's Jobs, newest
+// first. Ones whose Candidate or Job no longer exists are left out (the old
+// UI filtered them in the browser).
+func (s *Store) ListCompanyApplications(ctx context.Context, companyID bson.ObjectID) ([]CompanyApplication, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.D{{Key: "companyId", Value: companyID}}}},
+		{{Key: "$sort", Value: bson.D{{Key: "date", Value: -1}}}},
+		{{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: UsersCollection}, {Key: "localField", Value: "userId"},
+			{Key: "foreignField", Value: "_id"}, {Key: "as", Value: "candidate"},
+		}}},
+		{{Key: "$unwind", Value: "$candidate"}},
+		{{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: JobsCollection}, {Key: "localField", Value: "jobId"},
+			{Key: "foreignField", Value: "_id"}, {Key: "as", Value: "job"},
+		}}},
+		{{Key: "$unwind", Value: "$job"}},
+	}
+	cur, err := s.DB.Collection(JobApplicationsCollection).Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate company applications: %w", err)
+	}
+	apps := []CompanyApplication{}
+	if err := cur.All(ctx, &apps); err != nil {
+		return nil, fmt.Errorf("decode company applications: %w", err)
+	}
+	return apps, nil
+}
+
+// SetApplicationStatus changes the status of an Application to one of the
+// Company's Jobs. Unknown ids and other Companies' Applications both give
+// ErrNotFound.
+func (s *Store) SetApplicationStatus(ctx context.Context, id string, companyID bson.ObjectID, status string) error {
+	oid, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return ErrNotFound
+	}
+	res, err := s.DB.Collection(JobApplicationsCollection).UpdateOne(ctx,
+		bson.D{{Key: "_id", Value: oid}, {Key: "companyId", Value: companyID}},
+		bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: status}}}})
+	if err != nil {
+		return fmt.Errorf("set application status: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

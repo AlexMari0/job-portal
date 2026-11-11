@@ -61,6 +61,8 @@ func NewRouter(d Deps) http.Handler {
 		mux.Handle("GET /company/jobs", company(ListCompanyJobs(d.Store)))
 		mux.Handle("POST /company/jobs", company(CreateJob(d.Store)))
 		mux.Handle("PATCH /company/jobs/{id}", company(UpdateJobVisibility(d.Store)))
+		mux.Handle("GET /company/applications", company(ListCompanyApplications(d.Store)))
+		mux.Handle("PATCH /company/applications/{id}", company(UpdateApplicationStatus(d.Store)))
 	} else {
 		off := unavailable("company_auth_not_configured", "Company sign-in is not configured")(nil)
 		mux.Handle("POST /companies/login", off)

@@ -287,6 +287,55 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /company/applications:
+    get:
+      operationId: listCompanyApplications
+      summary: Applications to the signed-in Company's Jobs, newest first
+      description: Leaves out Applications whose Candidate or Job no longer exists.
+      security: [{ companySession: [] }]
+      responses:
+        "200":
+          description: Applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CompanyApplication" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+
+  /company/applications/{id}:
+    patch:
+      operationId: updateApplicationStatus
+      summary: Set the status of an Application to one of the Company's Jobs
+      security: [{ companySession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: "#/components/schemas/ApplicationStatus" }
+      responses:
+        "204": { description: Status updated }
+        "400":
+          description: "Unknown status (code: validation_failed)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404":
+          description: "Unknown, or another Company's, Application (code: application_not_found)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /webhooks/clerk:
     post:
       operationId: clerkWebhook
@@ -390,6 +439,23 @@ components:
         postedAt: { type: string, format: date-time }
         visible: { type: boolean }
         applicationCount: { type: integer, minimum: 0 }
+
+    CompanyApplication:
+      type: object
+      required: [id, status, appliedAt, candidate, job]
+      properties:
+        id: { type: string }
+        status: { $ref: "#/components/schemas/ApplicationStatus" }
+        appliedAt: { type: string, format: date-time }
+        candidate:
+          type: object
+          required: [id, name, image, resume]
+          properties:
+            id: { type: string }
+            name: { type: string }
+            image: { type: string, format: uri }
+            resume: { type: [string, "null"], format: uri }
+        job: { $ref: "#/components/schemas/JobSummary" }
 
     JobSummary:
       type: object

@@ -9,6 +9,8 @@ export type CompanyProfile = components["schemas"]["CompanyProfile"];
 export type CompanySession = components["schemas"]["CompanySession"];
 export type CompanyJob = components["schemas"]["CompanyJob"];
 export type NewJob = components["schemas"]["NewJob"];
+export type CompanyApplication = components["schemas"]["CompanyApplication"];
+export type ApplicationStatus = components["schemas"]["ApplicationStatus"];
 
 // httpOnly cookie on the Next.js domain holding the Company's JWT. Browser
 // JavaScript cannot read it; only this server forwards it to the Go API.
@@ -79,4 +81,13 @@ export const setJobVisibility = (id: string, visible: boolean) =>
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ visible }),
+  });
+
+export const listCompanyApplications = () => asCompany<CompanyApplication[]>("/company/applications");
+
+export const setApplicationStatus = (id: string, status: ApplicationStatus) =>
+  asCompany<void>(`/company/applications/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
   });

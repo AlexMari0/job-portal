@@ -2,7 +2,14 @@
 
 import { refresh } from "next/cache";
 import { ApiError } from "@/lib/api";
-import { createJob, setJobVisibility, withCompanySession, type NewJob } from "@/lib/company";
+import {
+  createJob,
+  setApplicationStatus,
+  setJobVisibility,
+  withCompanySession,
+  type ApplicationStatus,
+  type NewJob,
+} from "@/lib/company";
 
 export type ActionResult = { ok: true } | { ok: false; message: string; fields?: Record<string, string> };
 
@@ -23,6 +30,16 @@ export async function createJobAction(job: NewJob): Promise<ActionResult> {
 export async function setJobVisibilityAction(id: string, visible: boolean): Promise<ActionResult> {
   try {
     await withCompanySession(() => setJobVisibility(id, visible));
+  } catch (err) {
+    return failure(err);
+  }
+  refresh();
+  return { ok: true };
+}
+
+export async function setApplicationStatusAction(id: string, status: ApplicationStatus): Promise<ActionResult> {
+  try {
+    await withCompanySession(() => setApplicationStatus(id, status));
   } catch (err) {
     return failure(err);
   }
