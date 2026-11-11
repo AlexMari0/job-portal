@@ -1,11 +1,14 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ApiError, apiFetch } from "./api";
 import type { components } from "./api-types";
 
 export type CompanyProfile = components["schemas"]["CompanyProfile"];
 export type CompanySession = components["schemas"]["CompanySession"];
+export type CompanyJob = components["schemas"]["CompanyJob"];
+export type NewJob = components["schemas"]["NewJob"];
 
 // httpOnly cookie on the Next.js domain holding the Company's JWT. Browser
 // JavaScript cannot read it; only this server forwards it to the Go API.
@@ -48,3 +51,32 @@ export async function getCurrentCompany(): Promise<CompanyProfile | null> {
     throw err;
   }
 }
+
+/**
+ * Runs a Company API call; when the API rejects the session (401), clears it
+ * via the session-expired route instead of showing an error.
+ */
+export async function withCompanySession<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) redirect(SESSION_EXPIRED_PATH);
+    throw err;
+  }
+}
+
+export const listCompanyJobs = () => asCompany<CompanyJob[]>("/company/jobs");
+
+export const createJob = (job: NewJob) =>
+  asCompany<CompanyJob>("/company/jobs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(job),
+  });
+
+export const setJobVisibility = (id: string, visible: boolean) =>
+  asCompany<CompanyJob>(`/company/jobs/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ visible }),
+  });

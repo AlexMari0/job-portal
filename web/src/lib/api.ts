@@ -20,6 +20,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
+    /** Per-field messages for validation_failed / invalid_file. */
+    readonly fields: Record<string, string> = {},
   ) {
     super(message);
   }
@@ -35,6 +37,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
       res.status,
       body?.error.code ?? "unknown_error",
       body?.error.message ?? res.statusText,
+      body?.error.fields ?? {},
     );
   }
   return (await res.json()) as T;

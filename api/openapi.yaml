@@ -209,6 +209,84 @@ paths:
               schema: { $ref: "#/components/schemas/CompanyProfile" }
         "401": { $ref: "#/components/responses/Unauthenticated" }
 
+  /company/jobs:
+    get:
+      operationId: listCompanyJobs
+      summary: All of the signed-in Company's Jobs (Hidden included), newest first
+      security: [{ companySession: [] }]
+      responses:
+        "200":
+          description: Jobs with their Application counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CompanyJob" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+    post:
+      operationId: createJob
+      summary: Post a new (visible) Job
+      security: [{ companySession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewJob" }
+      responses:
+        "201":
+          description: Job created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyJob" }
+        "400":
+          description: "Invalid fields (code: validation_failed, see fields)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+
+  /company/jobs/{id}:
+    patch:
+      operationId: updateJobVisibility
+      summary: Show or hide one of the Company's Jobs
+      security: [{ companySession: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [visible]
+              properties:
+                visible: { type: boolean, description: The value to set (not a toggle) }
+      responses:
+        "200":
+          description: Updated Job
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyJob" }
+        "400":
+          description: "visible missing (code: validation_failed)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403":
+          description: "Job belongs to another Company (code: forbidden)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: "Unknown Job (code: job_not_found)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /webhooks/clerk:
     post:
       operationId: clerkWebhook
@@ -287,6 +365,31 @@ components:
         token: { type: string, description: 'Send as "Authorization: Bearer <token>"' }
         expiresAt: { type: string, format: date-time }
         company: { $ref: "#/components/schemas/CompanyProfile" }
+
+    NewJob:
+      type: object
+      required: [title, description, location, category, level, salary]
+      properties:
+        title: { type: string, description: Trimmed; must not be empty }
+        description: { type: string, description: Quill HTML; sanitized on write; must have visible text }
+        location: { $ref: "#/components/schemas/Location" }
+        category: { $ref: "#/components/schemas/Category" }
+        level: { $ref: "#/components/schemas/Level" }
+        salary: { type: integer, minimum: 0 }
+
+    CompanyJob:
+      type: object
+      required: [id, title, location, category, level, salary, postedAt, visible, applicationCount]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        location: { $ref: "#/components/schemas/Location" }
+        category: { $ref: "#/components/schemas/Category" }
+        level: { $ref: "#/components/schemas/Level" }
+        salary: { type: integer, minimum: 0 }
+        postedAt: { type: string, format: date-time }
+        visible: { type: boolean }
+        applicationCount: { type: integer, minimum: 0 }
 
     JobSummary:
       type: object

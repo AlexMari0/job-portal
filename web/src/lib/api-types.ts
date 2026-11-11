@@ -163,6 +163,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/company/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All of the signed-in Company's Jobs (Hidden included), newest first */
+        get: operations["listCompanyJobs"];
+        put?: never;
+        /** Post a new (visible) Job */
+        post: operations["createJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/company/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Show or hide one of the Company's Jobs */
+        patch: operations["updateJobVisibility"];
+        trace?: never;
+    };
     "/webhooks/clerk": {
         parameters: {
             query?: never;
@@ -219,6 +254,28 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
             company: components["schemas"]["CompanyProfile"];
+        };
+        NewJob: {
+            /** @description Trimmed; must not be empty */
+            title: string;
+            /** @description Quill HTML; sanitized on write; must have visible text */
+            description: string;
+            location: components["schemas"]["Location"];
+            category: components["schemas"]["Category"];
+            level: components["schemas"]["Level"];
+            salary: number;
+        };
+        CompanyJob: {
+            id: string;
+            title: string;
+            location: components["schemas"]["Location"];
+            category: components["schemas"]["Category"];
+            level: components["schemas"]["Level"];
+            salary: number;
+            /** Format: date-time */
+            postedAt: string;
+            visible: boolean;
+            applicationCount: number;
         };
         JobSummary: {
             id: string;
@@ -600,6 +657,118 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthenticated"];
+        };
+    };
+    listCompanyJobs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jobs with their Application counts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyJob"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    createJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewJob"];
+            };
+        };
+        responses: {
+            /** @description Job created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyJob"];
+                };
+            };
+            /** @description Invalid fields (code: validation_failed, see fields) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    updateJobVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description The value to set (not a toggle) */
+                    visible: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated Job */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyJob"];
+                };
+            };
+            /** @description visible missing (code: validation_failed) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            /** @description Job belongs to another Company (code: forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unknown Job (code: job_not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     clerkWebhook: {

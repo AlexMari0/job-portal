@@ -45,3 +45,12 @@ export function timeAgo(iso: string, now = Date.now()): string {
   }
   return rtf.format(seconds, "second");
 }
+
+// "Nov 10, 2026", like moment's format("ll").
+const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+export function formatDate(iso: string): string {
+  return dateFormat.format(new Date(iso));
+}
+
+export const JOB_LEVELS = ["Beginner level", "Intermediate level", "Senior level"] as const satisfies readonly components["schemas"]["Level"][];

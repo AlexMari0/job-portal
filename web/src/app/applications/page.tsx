@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { getMe, getMyApplications, type Application } from "@/lib/api";
+import { formatDate } from "@/lib/jobs";
 import ResumeForm from "./ResumeForm";
 
 export const metadata: Metadata = { title: "Applied Jobs | Job Portal" };
@@ -57,9 +58,6 @@ async function Applications() {
   );
 }
 
-// "Nov 10, 2026", like moment's format("ll").
-const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
-
 const statusColor: Record<Application["status"], string> = {
   Accepted: "bg-green-100",
   Rejected: "bg-red-100",
@@ -75,7 +73,7 @@ function ApplicationRow({ application: a }: { application: Application }) {
       </td>
       <td className="py-2 px-4 border-b border-gray-200">{a.job.title}</td>
       <td className="py-2 px-4 border-b border-gray-200 max-sm:hidden">{a.job.location}</td>
-      <td className="py-2 px-4 border-b border-gray-200 max-sm:hidden">{dateFormat.format(new Date(a.appliedAt))}</td>
+      <td className="py-2 px-4 border-b border-gray-200 max-sm:hidden">{formatDate(a.appliedAt)}</td>
       <td className="py-2 px-4 border-b border-gray-200">
         <span className={`${statusColor[a.status]} px-4 py-1.5 rounded-sm`}>{a.status}</span>
       </td>
