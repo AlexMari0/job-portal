@@ -12,6 +12,10 @@ type Config struct {
 	Port     string
 	MongoURI string
 	MongoDB  string
+
+	// ClerkWebhookSigningSecret verifies Clerk webhooks (Clerk dashboard →
+	// Webhooks → endpoint → Signing Secret, "whsec_..."). Optional locally.
+	ClerkWebhookSigningSecret string
 }
 
 // Load reads api/.env if present (local development), then the process
@@ -23,6 +27,8 @@ func Load() Config {
 		Port:     getenv("PORT", "8080"),
 		MongoURI: getenv("MONGODB_URI", "mongodb://localhost:27017"),
 		MongoDB:  getenv("MONGODB_DB", "job-portal"),
+
+		ClerkWebhookSigningSecret: os.Getenv("CLERK_WEBHOOK_SIGNING_SECRET"),
 	}
 }
 

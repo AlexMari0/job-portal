@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/microcosm-cc/bluemonday v1.0.27
+	github.com/svix/svix-webhooks v1.99.1
 	go.mongodb.org/mongo-driver/v2 v2.10.0
 	golang.org/x/crypto v0.58.0
 )
@@ -23,6 +24,7 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gohugoio/hashstructure v0.6.0 // indirect
 	github.com/gohugoio/hugo v0.164.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

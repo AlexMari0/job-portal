@@ -38,10 +38,16 @@ func run() error {
 	}
 	defer db.Close(context.Background())
 	slog.Info("database connected", "db", cfg.MongoDB)
+	if cfg.ClerkWebhookSigningSecret == "" {
+		slog.Warn("CLERK_WEBHOOK_SIGNING_SECRET not set: POST /webhooks/clerk returns 503")
+	}
 
 	srv := &http.Server{
-		Addr:              ":" + cfg.Port,
-		Handler:           handler.NewRouter(db),
+		Addr: ":" + cfg.Port,
+		Handler: handler.NewRouter(handler.Deps{
+			Store:              db,
+			ClerkWebhookSecret: cfg.ClerkWebhookSigningSecret,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

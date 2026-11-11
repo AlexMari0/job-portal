@@ -55,6 +55,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/webhooks/clerk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clerk user events (sent by Clerk via Svix, not by Next.js)
+         * @description Verifies the Svix signature (svix-id, svix-timestamp, svix-signature
+         *     headers) on the raw body. user.created and user.updated upsert the
+         *     Candidate (resume untouched), user.deleted removes it, any other
+         *     event is acknowledged and ignored.
+         */
+        post: operations["clerkWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -184,6 +207,46 @@ export interface operations {
             };
             /** @description Unknown, malformed, or Hidden Job (code: job_not_found) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    clerkWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Event processed or ignored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unreadable body or invalid signature (codes: invalid_body, invalid_signature) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Signing secret not configured (code: webhook_not_configured) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

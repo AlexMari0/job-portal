@@ -105,7 +105,7 @@ func decode[T any](t *testing.T, rec *httptest.ResponseRecorder) T {
 func TestListJobs(t *testing.T) {
 	s := testdb.New(t)
 	f := seedJobs(t, s)
-	router := handler.NewRouter(s)
+	router := handler.NewRouter(handler.Deps{Store: s})
 
 	rec := get(t, router, "/jobs")
 	if rec.Code != http.StatusOK {
@@ -144,7 +144,7 @@ func TestListJobs(t *testing.T) {
 
 func TestListJobsEmpty(t *testing.T) {
 	s := testdb.New(t)
-	rec := get(t, handler.NewRouter(s), "/jobs")
+	rec := get(t, handler.NewRouter(handler.Deps{Store: s}), "/jobs")
 	if rec.Code != http.StatusOK || rec.Body.String() != "[]\n" {
 		t.Errorf("got %d %q, want 200 []", rec.Code, rec.Body)
 	}
@@ -153,7 +153,7 @@ func TestListJobsEmpty(t *testing.T) {
 func TestGetJob(t *testing.T) {
 	s := testdb.New(t)
 	f := seedJobs(t, s)
-	router := handler.NewRouter(s)
+	router := handler.NewRouter(handler.Deps{Store: s})
 
 	t.Run("visible job", func(t *testing.T) {
 		rec := get(t, router, "/jobs/"+f.newest.Hex())

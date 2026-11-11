@@ -58,6 +58,33 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /webhooks/clerk:
+    post:
+      operationId: clerkWebhook
+      summary: Clerk user events (sent by Clerk via Svix, not by Next.js)
+      description: |
+        Verifies the Svix signature (svix-id, svix-timestamp, svix-signature
+        headers) on the raw body. user.created and user.updated upsert the
+        Candidate (resume untouched), user.deleted removes it, any other
+        event is acknowledged and ignored.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Event processed or ignored }
+        "400":
+          description: "Unreadable body or invalid signature (codes: invalid_body, invalid_signature)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: "Signing secret not configured (code: webhook_not_configured)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
 components:
   schemas:
     Health:
