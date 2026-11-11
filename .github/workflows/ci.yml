@@ -22,8 +22,10 @@ jobs:
         working-directory: api
     services:
       # The integration tests create and drop their own throwaway databases.
+      # mongo:7, not 8: MongoDB 8 refuses to start on the runners' Linux
+      # kernel 6.19+ (SERVER-121912). The tests use nothing 8-specific.
       mongo:
-        image: mongo:8
+        image: mongo:7
         ports: ["27017:27017"]
         options: >-
           --health-cmd "mongosh --quiet --eval 'db.runCommand({ping: 1})'"
