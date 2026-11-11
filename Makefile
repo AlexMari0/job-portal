@@ -1,4 +1,4 @@
-.PHONY: dev db db-stop seed api web test
+.PHONY: dev db db-stop seed api web test api-types
 
 # Start everything: MongoDB (Docker), Go API with hot reload, Next.js.
 dev: db
@@ -21,5 +21,10 @@ api:
 web:
 	cd web && npm run dev
 
-test:
+# Go tests include integration tests against the local MongoDB.
+test: db
 	cd api && go test ./...
+
+# Regenerate web/src/lib/api-types.ts after editing api/openapi.yaml.
+api-types:
+	cd web && npm run gen:api

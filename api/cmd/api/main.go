@@ -39,13 +39,9 @@ func run() error {
 	defer db.Close(context.Background())
 	slog.Info("database connected", "db", cfg.MongoDB)
 
-	// Go 1.22+ routing: method and path in one pattern, e.g. "GET /jobs/{id}".
-	mux := http.NewServeMux()
-	mux.Handle("GET /health", handler.Health(db))
-
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           mux,
+		Handler:           handler.NewRouter(db),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

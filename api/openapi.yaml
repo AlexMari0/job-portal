@@ -1,0 +1,123 @@
+openapi: 3.1.0
+info:
+  title: Job Portal API
+  version: 0.1.0
+  description: |
+    Go API for the job portal. Called only from the Next.js server
+    (see docs/adr/0001-go-api-called-only-from-nextjs-server.md).
+    Endpoints are added slice by slice as they are implemented.
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: API and database health
+      responses:
+        "200":
+          description: API and database are reachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+        "503":
+          description: Database is unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+
+  /jobs:
+    get:
+      operationId: listJobs
+      summary: All visible Jobs, newest first
+      responses:
+        "200":
+          description: Visible Jobs (Hidden Jobs and Jobs without a Company are excluded)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Job" }
+
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      summary: One visible Job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The Job
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+        "404":
+          description: "Unknown, malformed, or Hidden Job (code: job_not_found)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status, database]
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        database: { type: string, enum: [ok, unreachable] }
+
+    Location:
+      type: string
+      enum: [Bangalore, Washington, Hyderabad, Mumbai, California, Chennai, New York]
+
+    Category:
+      type: string
+      enum: [Programming, Data Science, Designing, Networking, Management, Marketing, Cybersecurity]
+
+    Level:
+      type: string
+      enum: [Beginner level, Intermediate level, Senior level]
+
+    CompanySummary:
+      type: object
+      description: Public view of a Company
+      required: [id, name, image]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        image: { type: string, format: uri }
+
+    Job:
+      type: object
+      required: [id, title, description, excerpt, location, category, level, salary, postedAt, company]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description:
+          type: string
+          description: Sanitized HTML from the Quill editor
+        excerpt:
+          type: string
+          description: Plain-text preview, at most 150 characters
+        location: { $ref: "#/components/schemas/Location" }
+        category: { $ref: "#/components/schemas/Category" }
+        level: { $ref: "#/components/schemas/Level" }
+        salary: { type: integer, minimum: 0 }
+        postedAt: { type: string, format: date-time }
+        company: { $ref: "#/components/schemas/CompanySummary" }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, description: "snake_case machine-readable code" }
+            message: { type: string }
+            fields:
+              type: object
+              description: Per-field validation messages (400 only)
+              additionalProperties: { type: string }

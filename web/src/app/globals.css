@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Tailwind 4 made the default border colour currentColor; keep v3's gray. */
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+::-webkit-scrollbar {
+  display: none;
 }
+
+/* Job description HTML from the Quill editor. */
+.rich-text { font-size: 15px; color: #7a7b7d; }
+.rich-text p { margin-bottom: 16px; }
+.rich-text h1 { font-size: 36px; font-weight: 800; color: #252525; margin: 32px 0 16px; }
+.rich-text h2 { font-size: 22px; font-weight: 700; color: #252525; margin: 28px 0 14px; }
+.rich-text h3 { font-size: 18px; font-weight: 600; color: #333333; margin: 24px 0 12px; }
+.rich-text strong { font-weight: 700; }
+.rich-text em { font-style: italic; }
+.rich-text u { text-decoration: underline; }
+.rich-text a { color: #2563eb; text-decoration: underline; }
+.rich-text ol { margin-left: 30px; list-style-type: decimal; }
+.rich-text ul { margin-left: 30px; list-style-type: disc; }
+/* Quill 2 writes bullet lists as <ol><li data-list="bullet">. */
+.rich-text li[data-list="bullet"] { list-style-type: disc; }
+.rich-text li { margin-bottom: 8px; }
+.rich-text .ql-ui { display: none; }
+.rich-text .ql-align-center { text-align: center; }
+.rich-text .ql-align-right { text-align: right; }
+.rich-text .ql-align-justify { text-align: justify; }

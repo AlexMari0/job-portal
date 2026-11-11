@@ -69,12 +69,12 @@ func run() error {
 	companies := []any{
 		bson.D{
 			{Key: "_id", Value: acme}, {Key: "name", Value: "Acme Corp"},
-			{Key: "email", Value: "hr@acme.test"}, {Key: "image", Value: "https://placehold.co/96?text=Acme"},
+			{Key: "email", Value: "hr@acme.test"}, {Key: "image", Value: "https://placehold.co/96x96.png?text=Acme"},
 			{Key: "password", Value: string(hash)}, {Key: "__v", Value: 0},
 		},
 		bson.D{
 			{Key: "_id", Value: globex}, {Key: "name", Value: "Globex"},
-			{Key: "email", Value: "jobs@globex.test"}, {Key: "image", Value: "https://placehold.co/96?text=Globex"},
+			{Key: "email", Value: "jobs@globex.test"}, {Key: "image", Value: "https://placehold.co/96x96.png?text=Globex"},
 			{Key: "password", Value: string(hash)}, {Key: "__v", Value: 0},
 		},
 	}
@@ -83,12 +83,12 @@ func run() error {
 	users := []any{
 		bson.D{
 			{Key: "_id", Value: "user_seed_alice"}, {Key: "name", Value: "Alice Santoso"},
-			{Key: "email", Value: "alice@example.test"}, {Key: "image", Value: "https://placehold.co/96?text=A"},
+			{Key: "email", Value: "alice@example.test"}, {Key: "image", Value: "https://placehold.co/96x96.png?text=A"},
 			{Key: "resume", Value: "https://example.test/resume-alice.pdf"}, {Key: "__v", Value: 0},
 		},
 		bson.D{
 			{Key: "_id", Value: "user_seed_budi"}, {Key: "name", Value: "Budi Pratama"},
-			{Key: "email", Value: "budi@example.test"}, {Key: "image", Value: "https://placehold.co/96?text=B"},
+			{Key: "email", Value: "budi@example.test"}, {Key: "image", Value: "https://placehold.co/96x96.png?text=B"},
 			{Key: "resume", Value: ""}, {Key: "__v", Value: 0},
 		},
 	}
