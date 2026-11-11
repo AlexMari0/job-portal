@@ -70,6 +70,13 @@ func run() error {
 		slog.Warn("CLOUDINARY_CLOUD_NAME not set: upload routes return 503")
 	}
 
+	var companyTokens *auth.CompanyTokens
+	if len(cfg.CompanyJWTSecret) >= 32 {
+		companyTokens = auth.NewCompanyTokens(cfg.CompanyJWTSecret, 30*24*time.Hour) // 30 days, as before
+	} else {
+		slog.Warn("COMPANY_JWT_SECRET missing or shorter than 32 characters: Company routes return 503")
+	}
+
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
 		Handler: handler.NewRouter(handler.Deps{
@@ -78,6 +85,7 @@ func run() error {
 			CandidateAuth:      candidateAuth,
 			FetchClerkUser:     fetchClerkUser,
 			Uploader:           uploader,
+			CompanyTokens:      companyTokens,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

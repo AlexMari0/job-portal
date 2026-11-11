@@ -165,6 +165,50 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /companies/login:
+    post:
+      operationId: loginCompany
+      summary: Sign a Company in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, description: Case-insensitive }
+                password: { type: string }
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanySession" }
+        "400":
+          description: "Body is not JSON (invalid_body) or fields missing (validation_failed)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: "Wrong email or password, indistinguishable (code: invalid_credentials)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /company:
+    get:
+      operationId: getCurrentCompany
+      summary: The signed-in Company
+      security: [{ companySession: [] }]
+      responses:
+        "200":
+          description: The Company
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompanyProfile" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+
   /webhooks/clerk:
     post:
       operationId: clerkWebhook
@@ -199,6 +243,12 @@ components:
       scheme: bearer
       description: Clerk session token of a Candidate, issued for WEB_ORIGIN (azp)
 
+    companySession:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Company session token from POST /companies/login (HS256, 30 days)
+
   responses:
     Unauthenticated:
       description: "Missing or invalid session token (code: unauthenticated)"
@@ -219,6 +269,24 @@ components:
           type: [string, "null"]
           format: uri
           description: Resume URL, null until the first upload
+
+    CompanyProfile:
+      type: object
+      description: The signed-in Company's own view
+      required: [id, name, email, image]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        image: { type: string, format: uri }
+
+    CompanySession:
+      type: object
+      required: [token, expiresAt, company]
+      properties:
+        token: { type: string, description: 'Send as "Authorization: Bearer <token>"' }
+        expiresAt: { type: string, format: date-time }
+        company: { $ref: "#/components/schemas/CompanyProfile" }
 
     JobSummary:
       type: object

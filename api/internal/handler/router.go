@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/AlexMari0/job-portal/api/internal/auth"
 	"github.com/AlexMari0/job-portal/api/internal/store"
 )
 
@@ -23,6 +24,10 @@ type Deps struct {
 	FetchClerkUser FetchClerkUser
 	// Uploader stores uploaded files (Cloudinary). Nil disables uploads (503).
 	Uploader Uploader
+
+	// CompanyTokens issues and verifies Company session tokens.
+	// Nil disables Company login and the /company routes (503).
+	CompanyTokens *auth.CompanyTokens
 }
 
 // NewRouter wires every route in the API contract (api/openapi.yaml).
@@ -47,6 +52,17 @@ func NewRouter(d Deps) http.Handler {
 	mux.Handle("PUT /me/resume", candidate(withUploads(d.Uploader, func(up Uploader) http.Handler {
 		return UploadResume(d.Store, d.FetchClerkUser, up)
 	})))
+
+	// Company routes: Company session token (JWT from POST /companies/login).
+	if d.CompanyTokens != nil {
+		company := d.CompanyTokens.Middleware(Unauthenticated)
+		mux.Handle("POST /companies/login", LoginCompany(d.Store, d.CompanyTokens))
+		mux.Handle("GET /company", company(GetCurrentCompany(d.Store)))
+	} else {
+		off := unavailable("company_auth_not_configured", "Company sign-in is not configured")(nil)
+		mux.Handle("POST /companies/login", off)
+		mux.Handle("GET /company", off)
+	}
 
 	mux.Handle("POST /webhooks/clerk", ClerkWebhook(d.ClerkWebhookSecret, d.Store))
 

@@ -25,7 +25,8 @@ export class ApiError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+/** Calls the Go API; throws ApiError on non-2xx. */
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, init);
   if (res.status === 204) return undefined as T;
   if (!res.ok) {

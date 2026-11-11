@@ -23,3 +23,10 @@ func writeInternalError(w http.ResponseWriter, r *http.Request, err error) {
 	slog.Error("request failed", "method", r.Method, "path", r.URL.Path, "err", err)
 	writeError(w, http.StatusInternalServerError, "internal_error", "Something went wrong")
 }
+
+// writeValidationError answers 400 validation_failed with per-field messages.
+func writeValidationError(w http.ResponseWriter, fields map[string]string) {
+	writeJSON(w, http.StatusBadRequest, map[string]apiError{"error": {
+		Code: "validation_failed", Message: "Some fields are invalid", Fields: fields,
+	}})
+}

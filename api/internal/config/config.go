@@ -26,6 +26,9 @@ type Config struct {
 	CloudinaryCloudName string
 	CloudinaryAPIKey    string
 	CloudinaryAPISecret string
+
+	// CompanyJWTSecret signs Company session tokens; empty disables Company sign-in.
+	CompanyJWTSecret string
 }
 
 // Load reads api/.env if present (local development), then the process
@@ -45,6 +48,8 @@ func Load() Config {
 		CloudinaryCloudName: os.Getenv("CLOUDINARY_CLOUD_NAME"),
 		CloudinaryAPIKey:    os.Getenv("CLOUDINARY_API_KEY"),
 		CloudinaryAPISecret: os.Getenv("CLOUDINARY_API_SECRET"),
+
+		CompanyJWTSecret: os.Getenv("COMPANY_JWT_SECRET"),
 	}
 }
 

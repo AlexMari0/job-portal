@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import { hasCompanySession } from "@/lib/company";
 import NavAuth from "./NavAuth";
 
 export default function Navbar() {
@@ -12,9 +13,13 @@ export default function Navbar() {
         </Link>
         {/* Session-dependent UI must sit inside Suspense with Cache Components. */}
         <Suspense fallback={<div className="h-10" />}>
-          <NavAuth />
+          <NavAuthWithSession />
         </Suspense>
       </div>
     </div>
   );
+}
+
+async function NavAuthWithSession() {
+  return <NavAuth hasCompanySession={await hasCompanySession()} />;
 }
