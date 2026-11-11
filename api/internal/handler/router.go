@@ -24,6 +24,9 @@ type Deps struct {
 	FetchClerkUser FetchClerkUser
 	// Uploader stores uploaded files (Cloudinary). Nil disables uploads (503).
 	Uploader Uploader
+	// Files serves locally stored uploads at /uploads/ (development and
+	// end-to-end tests only, when uploads go to disk instead of Cloudinary).
+	Files http.Handler
 
 	// CompanyTokens issues and verifies Company session tokens.
 	// Nil disables Company login and the /company routes (503).
@@ -72,6 +75,10 @@ func NewRouter(d Deps) http.Handler {
 		mux.Handle("POST /companies", off)
 		mux.Handle("GET /company", off)
 		mux.Handle("/company/", off)
+	}
+
+	if d.Files != nil {
+		mux.Handle("GET /uploads/", d.Files)
 	}
 
 	mux.Handle("POST /webhooks/clerk", ClerkWebhook(d.ClerkWebhookSecret, d.Store))

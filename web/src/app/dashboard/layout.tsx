@@ -47,7 +47,7 @@ async function CompanyMenu() {
         <button type="button" aria-label="Account menu">
           <Image className="w-8 h-8 border border-gray-200 rounded-full object-cover" src={company.image} alt="" width={32} height={32} />
         </button>
-        <div className="absolute hidden group-hover:block group-focus-within:block top-0 right-0 z-10 text-black rounded-sm pt-12">
+        <div className="absolute hidden group-hover:block group-focus-within:block top-full right-0 z-10 text-black rounded-sm pt-2">
           <form action={logoutCompanyAction} className="m-0 p-2 bg-white rounded-md border border-gray-200 text-sm">
             <button type="submit" className="py-1 px-2 pr-10">
               Logout

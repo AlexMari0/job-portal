@@ -73,14 +73,23 @@ func run() error {
 	}
 
 	var uploader handler.Uploader
-	if cfg.CloudinaryCloudName != "" {
+	var files http.Handler
+	switch {
+	case cfg.CloudinaryCloudName != "":
 		cld, err := upload.NewCloudinary(cfg.CloudinaryCloudName, cfg.CloudinaryAPIKey, cfg.CloudinaryAPISecret)
 		if err != nil {
 			return err
 		}
 		uploader = cld
-	} else {
-		slog.Warn("CLOUDINARY_CLOUD_NAME not set: upload routes return 503")
+	case cfg.LocalUploadDir != "":
+		local, err := upload.NewLocal(cfg.LocalUploadDir, cfg.PublicURL)
+		if err != nil {
+			return err
+		}
+		uploader, files = local, local.Handler()
+		slog.Info("uploads stored on disk (development only)", "dir", cfg.LocalUploadDir)
+	default:
+		slog.Warn("neither CLOUDINARY_CLOUD_NAME nor LOCAL_UPLOAD_DIR set: upload routes return 503")
 	}
 
 	var companyTokens *auth.CompanyTokens
@@ -98,6 +107,7 @@ func run() error {
 			CandidateAuth:      candidateAuth,
 			FetchClerkUser:     fetchClerkUser,
 			Uploader:           uploader,
+			Files:              files,
 			CompanyTokens:      companyTokens,
 		})),
 		ReadHeaderTimeout: 5 * time.Second,

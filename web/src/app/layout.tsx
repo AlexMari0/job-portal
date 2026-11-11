@@ -15,7 +15,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        {/* Clerk's provider goes inside <body> (Next.js 16 + Cache Components). */}
+        {/* Clerk's provider goes inside <body> (Next.js 16 + Cache Components).
+            @clerk/nextjs is pinned to 7.9.23: 7.9.24+ breaks the Partial Prerender
+            resume (github.com/clerk/javascript/issues/10700); e2e/public.spec.ts
+            fails if that regression comes back. */}
         <ClerkProvider>
           {children}
           <Toaster richColors position="top-right" />

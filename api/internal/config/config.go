@@ -22,6 +22,12 @@ type Config struct {
 	// WebOrigin is the Next.js site's origin; Clerk tokens must be issued for it (azp).
 	WebOrigin string
 
+	// LocalUploadDir stores uploads on disk instead of Cloudinary (development
+	// and end-to-end tests). Used only when Cloudinary is not configured.
+	LocalUploadDir string
+	// PublicURL is this API's origin as browsers see it, for local upload URLs.
+	PublicURL string
+
 	// Cloudinary account for uploads; all three empty disables uploads.
 	CloudinaryCloudName string
 	CloudinaryAPIKey    string
@@ -40,14 +46,18 @@ type Config struct {
 func Load() Config {
 	_ = godotenv.Load() // missing .env is fine: production sets real env vars
 
+	port := getenv("PORT", "8080")
 	return Config{
-		Port:     getenv("PORT", "8080"),
-		MongoURI: getenv("MONGODB_URI", "mongodb://localhost:27017"),
-		MongoDB:  getenv("MONGODB_DB", "job-portal"),
+		Port:      port,
+		PublicURL: getenv("PUBLIC_URL", "http://localhost:"+port),
+		MongoURI:  getenv("MONGODB_URI", "mongodb://localhost:27017"),
+		MongoDB:   getenv("MONGODB_DB", "job-portal"),
 
 		ClerkWebhookSigningSecret: os.Getenv("CLERK_WEBHOOK_SIGNING_SECRET"),
 		ClerkSecretKey:            os.Getenv("CLERK_SECRET_KEY"),
 		WebOrigin:                 getenv("WEB_ORIGIN", "http://localhost:3000"),
+
+		LocalUploadDir: os.Getenv("LOCAL_UPLOAD_DIR"),
 
 		CloudinaryCloudName: os.Getenv("CLOUDINARY_CLOUD_NAME"),
 		CloudinaryAPIKey:    os.Getenv("CLOUDINARY_API_KEY"),

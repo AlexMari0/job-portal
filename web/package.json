@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "gen:api": "openapi-typescript ../api/openapi.yaml -o src/lib/api-types.ts"
+    "gen:api": "openapi-typescript ../api/openapi.yaml -o src/lib/api-types.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.9.25",
+    "@clerk/nextjs": "7.9.23",
     "@sentry/nextjs": "^11.12.0",
     "next": "16.4.6",
     "quill": "^2.0.3",
@@ -20,6 +21,7 @@
     "sonner": "^2.0.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
     "@types/react": "^19",

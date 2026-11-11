@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "placehold.co" },
       { protocol: "https", hostname: "img.clerk.com" },
+      // Uploads stored on disk by the Go API in development / e2e tests.
+      ...(process.env.LOCAL_UPLOADS_ORIGIN ? [new URL(process.env.LOCAL_UPLOADS_ORIGIN)] : []),
     ],
   },
   async redirects() {

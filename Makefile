@@ -1,4 +1,4 @@
-.PHONY: dev db db-stop seed api web test api-types
+.PHONY: dev db db-stop seed api web test api-types e2e
 
 # Start everything: MongoDB (Docker), Go API with hot reload, Next.js.
 dev: db
@@ -28,3 +28,8 @@ test: db
 # Regenerate web/src/lib/api-types.ts after editing api/openapi.yaml.
 api-types:
 	cd web && npm run gen:api
+
+# Browser tests (Playwright) against a separate stack: API :8090, web :3100,
+# database job-portal-e2e, uploads on disk. First run: cd web && npx playwright install chromium
+e2e: db
+	cd web && npm run e2e

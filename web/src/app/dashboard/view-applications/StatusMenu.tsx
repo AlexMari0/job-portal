@@ -24,7 +24,7 @@ export default function StatusMenu({ applicationId }: { applicationId: string })
       <button type="button" className="text-gray-500" aria-label="Change status">
         ...
       </button>
-      <div className="z-10 hidden group-hover:block group-focus-within:block absolute right-0 md:left-0 top-0 mt-2 w-32 bg-white border border-gray-200 rounded-sm shadow-sm">
+      <div className="z-10 hidden group-hover:block group-focus-within:block absolute right-0 md:left-0 top-full w-32 bg-white border border-gray-200 rounded-sm shadow-sm">
         <button type="button" onClick={() => set("Accepted")} className="block w-full text-left px-4 py-2 text-blue-500 hover:bg-gray-100">
           Accept
         </button>
