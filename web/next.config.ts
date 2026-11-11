@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  experimental: {
+    // Resume (2 MB) and logo (1 MB) uploads pass through Server Actions to the
+    // Go API; the default limit is 1 MB. Vercel's own cap is 4.5 MB.
+    serverActions: { bodySizeLimit: "3mb" },
+  },
   images: {
     // Company logos are hosted on Cloudinary; placehold.co is used by the local seed.
     remotePatterns: [

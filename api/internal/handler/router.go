@@ -21,6 +21,8 @@ type Deps struct {
 	// FetchClerkUser creates a missing Candidate document from Clerk on
 	// demand. Nil: rely on the webhook only.
 	FetchClerkUser FetchClerkUser
+	// Uploader stores uploaded files (Cloudinary). Nil disables uploads (503).
+	Uploader Uploader
 }
 
 // NewRouter wires every route in the API contract (api/openapi.yaml).
@@ -42,6 +44,9 @@ func NewRouter(d Deps) http.Handler {
 	mux.Handle("GET /me", candidate(GetMe(d.Store, d.FetchClerkUser)))
 	mux.Handle("GET /me/applications", candidate(ListMyApplications(d.Store)))
 	mux.Handle("POST /jobs/{id}/applications", candidate(ApplyToJob(d.Store, d.FetchClerkUser)))
+	mux.Handle("PUT /me/resume", candidate(withUploads(d.Uploader, func(up Uploader) http.Handler {
+		return UploadResume(d.Store, d.FetchClerkUser, up)
+	})))
 
 	mux.Handle("POST /webhooks/clerk", ClerkWebhook(d.ClerkWebhookSecret, d.Store))
 
@@ -61,4 +66,12 @@ func unavailable(code, message string) Middleware {
 			writeError(w, http.StatusServiceUnavailable, code, message)
 		})
 	}
+}
+
+// withUploads builds an upload handler, or a 503 one when uploads are not configured.
+func withUploads(up Uploader, build func(Uploader) http.Handler) http.Handler {
+	if up == nil {
+		return unavailable("uploads_not_configured", "File uploads are not configured")(nil)
+	}
+	return build(up)
 }

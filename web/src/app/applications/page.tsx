@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { getMe, getMyApplications, type Application } from "@/lib/api";
+import ResumeForm from "./ResumeForm";
 
 export const metadata: Metadata = { title: "Applied Jobs | Job Portal" };
 
@@ -31,14 +32,7 @@ async function Applications() {
     <>
       <h2 className="text-xl font-semibold">Your Resume</h2>
       <div className="flex gap-2 mb-6 mt-3">
-        {me?.resume ? (
-          <a className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg" href={me.resume} target="_blank" rel="noopener noreferrer">
-            Resume
-          </a>
-        ) : (
-          // Upload comes with the resume upload slice.
-          <p className="text-gray-500">No resume uploaded yet.</p>
-        )}
+        <ResumeForm resume={me?.resume ?? null} />
       </div>
 
       <h2 className="text-xl font-semibold mb-4">Jobs Applied</h2>

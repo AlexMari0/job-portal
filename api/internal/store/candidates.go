@@ -73,3 +73,16 @@ func (s *Store) GetCandidate(ctx context.Context, id string) (Candidate, error) 
 	}
 	return c, nil
 }
+
+// SetCandidateResume replaces the Candidate's resume URL.
+func (s *Store) SetCandidateResume(ctx context.Context, id, url string) error {
+	res, err := s.DB.Collection(UsersCollection).UpdateByID(ctx, id,
+		bson.D{{Key: "$set", Value: bson.D{{Key: "resume", Value: url}}}})
+	if err != nil {
+		return fmt.Errorf("set resume %s: %w", id, err)
+	}
+	if res.MatchedCount == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

@@ -21,6 +21,11 @@ type Config struct {
 	ClerkSecretKey string
 	// WebOrigin is the Next.js site's origin; Clerk tokens must be issued for it (azp).
 	WebOrigin string
+
+	// Cloudinary account for uploads; all three empty disables uploads.
+	CloudinaryCloudName string
+	CloudinaryAPIKey    string
+	CloudinaryAPISecret string
 }
 
 // Load reads api/.env if present (local development), then the process
@@ -36,6 +41,10 @@ func Load() Config {
 		ClerkWebhookSigningSecret: os.Getenv("CLERK_WEBHOOK_SIGNING_SECRET"),
 		ClerkSecretKey:            os.Getenv("CLERK_SECRET_KEY"),
 		WebOrigin:                 getenv("WEB_ORIGIN", "http://localhost:3000"),
+
+		CloudinaryCloudName: os.Getenv("CLOUDINARY_CLOUD_NAME"),
+		CloudinaryAPIKey:    os.Getenv("CLOUDINARY_API_KEY"),
+		CloudinaryAPISecret: os.Getenv("CLOUDINARY_API_SECRET"),
 	}
 }
 

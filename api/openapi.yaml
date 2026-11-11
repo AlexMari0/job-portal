@@ -125,6 +125,46 @@ paths:
                 items: { $ref: "#/components/schemas/Application" }
         "401": { $ref: "#/components/responses/Unauthenticated" }
 
+  /me/resume:
+    put:
+      operationId: uploadResume
+      summary: Upload or replace the signed-in Candidate's resume
+      description: The previous file is kept in Cloudinary.
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [resume]
+              properties:
+                resume:
+                  type: string
+                  format: binary
+                  description: PDF (detected from content), at most 2 MB
+      responses:
+        "200":
+          description: Resume stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [resume]
+                properties:
+                  resume: { type: string, format: uri }
+        "400":
+          description: "Not a PDF, empty, missing, or over 2 MB (code: invalid_file, fields.resume)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "503":
+          description: "Uploads not configured (code: uploads_not_configured)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
   /webhooks/clerk:
     post:
       operationId: clerkWebhook

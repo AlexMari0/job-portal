@@ -20,6 +20,7 @@ import (
 	"github.com/AlexMari0/job-portal/api/internal/config"
 	"github.com/AlexMari0/job-portal/api/internal/handler"
 	"github.com/AlexMari0/job-portal/api/internal/store"
+	"github.com/AlexMari0/job-portal/api/internal/upload"
 )
 
 func main() {
@@ -58,6 +59,17 @@ func run() error {
 		slog.Warn("CLERK_SECRET_KEY not set: Candidate routes return 503")
 	}
 
+	var uploader handler.Uploader
+	if cfg.CloudinaryCloudName != "" {
+		cld, err := upload.NewCloudinary(cfg.CloudinaryCloudName, cfg.CloudinaryAPIKey, cfg.CloudinaryAPISecret)
+		if err != nil {
+			return err
+		}
+		uploader = cld
+	} else {
+		slog.Warn("CLOUDINARY_CLOUD_NAME not set: upload routes return 503")
+	}
+
 	srv := &http.Server{
 		Addr: ":" + cfg.Port,
 		Handler: handler.NewRouter(handler.Deps{
@@ -65,6 +77,7 @@ func run() error {
 			ClerkWebhookSecret: cfg.ClerkWebhookSigningSecret,
 			CandidateAuth:      candidateAuth,
 			FetchClerkUser:     fetchClerkUser,
+			Uploader:           uploader,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

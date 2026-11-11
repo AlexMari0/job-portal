@@ -105,3 +105,12 @@ export async function applyToJob(jobId: string): Promise<Application> {
   if (!app) throw new ApiError(401, "unauthenticated", "Sign in required");
   return app;
 }
+
+/** Uploads or replaces the Candidate's resume (a PDF up to 2 MB). */
+export async function uploadResume(file: File): Promise<{ resume: string }> {
+  const form = new FormData();
+  form.append("resume", file, file.name);
+  const res = await asCandidate<{ resume: string }>("/me/resume", { method: "PUT", body: form });
+  if (!res) throw new ApiError(401, "unauthenticated", "Sign in required");
+  return res;
+}
