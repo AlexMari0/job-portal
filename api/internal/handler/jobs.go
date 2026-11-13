@@ -52,11 +52,7 @@ func toJobResponse(j store.JobWithCompany) JobResponse {
 		Level:       j.Level,
 		Salary:      j.Salary,
 		PostedAt:    time.UnixMilli(j.Date).UTC(),
-		Company: CompanySummary{
-			ID:    j.Company.ID.Hex(),
-			Name:  j.Company.Name,
-			Image: j.Company.Image,
-		},
+		Company:     toCompanySummary(j.Company),
 	}
 }
 

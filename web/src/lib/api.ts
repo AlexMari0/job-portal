@@ -1,10 +1,10 @@
 import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
+import * as Sentry from "@sentry/nextjs";
 import type { components } from "./api-types";
 
 // Types generated from api/openapi.yaml (`npm run gen:api`).
-export type Health = components["schemas"]["Health"];
 export type Job = components["schemas"]["Job"];
 export type ApiErrorBody = components["schemas"]["Error"];
 export type Candidate = components["schemas"]["Candidate"];
@@ -41,16 +41,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     );
   }
   return (await res.json()) as T;
-}
-
-/** Go API health. Returns null when the API itself is unreachable. */
-export async function getHealth(): Promise<Health | null> {
-  try {
-    const res = await fetch(`${API_URL}/health`);
-    return (await res.json()) as Health;
-  } catch {
-    return null;
-  }
 }
 
 /** All visible Jobs, newest first. */
@@ -117,4 +107,19 @@ export async function uploadResume(file: File): Promise<{ resume: string }> {
   const res = await asCandidate<{ resume: string }>("/me/resume", { method: "PUT", body: form });
   if (!res) throw new ApiError(401, "unauthenticated", "Sign in required");
   return res;
+}
+
+/**
+ * For data a page can live without (e.g. the Candidate's state on a public
+ * page): on failure, report the error and use the fallback instead of
+ * breaking the whole page.
+ */
+export async function optional<T>(promise: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await promise;
+  } catch (err) {
+    console.error(err);
+    Sentry.captureException(err);
+    return fallback;
+  }
 }

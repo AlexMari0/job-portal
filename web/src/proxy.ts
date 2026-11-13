@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { COMPANY_COOKIE } from "./lib/company-cookie";
 
 // Pages only a signed-in Candidate may open.
 const isCandidatePage = createRouteMatcher(["/applications(.*)"]);
@@ -13,7 +14,7 @@ const isCompanyPage = createRouteMatcher(["/dashboard(.*)"]);
 // page the response status would already be 200.
 export default clerkMiddleware(async (auth, req) => {
   if (isCandidatePage(req)) await auth.protect();
-  if (isCompanyPage(req) && !req.cookies.has("company_session")) {
+  if (isCompanyPage(req) && !req.cookies.has(COMPANY_COOKIE)) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 });

@@ -1,5 +1,23 @@
 import type { NextConfig } from "next";
 
+// Uploads stored on disk by the Go API (LOCAL_UPLOAD_DIR) in development and
+// e2e tests, served at <origin>/uploads/.
+const localUploads = (() => {
+  const origin = process.env.LOCAL_UPLOADS_ORIGIN;
+  if (!origin) return { patterns: [] };
+  const url = new URL(origin);
+  return {
+    patterns: [
+      {
+        protocol: url.protocol.replace(":", "") as "http" | "https",
+        hostname: url.hostname,
+        port: url.port,
+        pathname: "/uploads/**",
+      },
+    ],
+  };
+})();
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
@@ -22,9 +40,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "placehold.co" },
       { protocol: "https", hostname: "img.clerk.com" },
-      // Uploads stored on disk by the Go API in development / e2e tests.
-      ...(process.env.LOCAL_UPLOADS_ORIGIN ? [new URL(process.env.LOCAL_UPLOADS_ORIGIN)] : []),
+      ...localUploads.patterns,
     ],
+    // Only when LOCAL_UPLOADS_ORIGIN is set (development / e2e): the Go API
+    // on localhost is a private address, which the optimizer refuses by
+    // default to prevent SSRF. Never set in production.
+    dangerouslyAllowLocalIP: localUploads.patterns.length > 0,
   },
   async redirects() {
     // Keep links to the old React app's URLs working.

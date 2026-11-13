@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ApiError, apiFetch } from "./api";
+import { COMPANY_COOKIE } from "./company-cookie";
 import type { components } from "./api-types";
 
 export type CompanyProfile = components["schemas"]["CompanyProfile"];
@@ -14,7 +15,7 @@ export type ApplicationStatus = components["schemas"]["ApplicationStatus"];
 
 // httpOnly cookie on the Next.js domain holding the Company's JWT. Browser
 // JavaScript cannot read it; only this server forwards it to the Go API.
-export const COMPANY_COOKIE = "company_session";
+export { COMPANY_COOKIE };
 
 // Where to send a Company whose token the API rejected: a route handler that
 // clears the cookie (Server Components cannot modify cookies) and goes home.

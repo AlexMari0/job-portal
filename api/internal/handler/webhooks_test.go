@@ -12,6 +12,8 @@ import (
 
 	svix "github.com/svix/svix-webhooks/go"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/AlexMari0/job-portal/api/internal/handler"
 	"github.com/AlexMari0/job-portal/api/internal/store"
@@ -201,4 +203,50 @@ func TestClerkWebhookNotConfigured(t *testing.T) {
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Errorf("status = %d, want 503", rec.Code)
 	}
+}
+
+// users.email has a unique index in production (Mongoose `unique: true`).
+// A Clerk user without an email, or whose email another Candidate document
+// already uses, must not make Clerk retry the webhook forever (500) nor
+// break the Candidate's requests with 500.
+func TestCandidateWithoutUsableEmail(t *testing.T) {
+	s := testdb.New(t)
+	ctx := context.Background()
+	if _, err := s.DB.Collection(store.UsersCollection).Indexes().CreateOne(ctx,
+		mongo.IndexModel{Keys: bson.D{{Key: "email", Value: 1}}, Options: options.Index().SetUnique(true)}); err != nil {
+		t.Fatal(err)
+	}
+	seedCandidates(t, s) // alice@example.test
+	router := handler.NewRouter(handler.Deps{Store: s, ClerkWebhookSecret: testWebhookSecret, CandidateAuth: fakeCandidateAuth,
+		FetchClerkUser: func(_ context.Context, id string) (handler.ClerkUser, error) {
+			return handler.ClerkUser{ID: id, ImageURL: "https://img/x.png", PrimaryEmailAddressID: "e1",
+				EmailAddresses: []handler.ClerkEmailAddress{{ID: "e1", EmailAddress: "alice@example.test"}}}, nil
+		}})
+
+	noEmail := `{"type":"user.created","data":{"id":"user_phone_only","first_name":"Phone","image_url":"https://img/p.png","email_addresses":[]}}`
+	takenEmail := `{"type":"user.created","data":{"id":"user_alice2","first_name":"Alice","image_url":"https://img/a.png",
+	  "primary_email_address_id":"e1","email_addresses":[{"id":"e1","email_address":"alice@example.test"}]}}`
+	for name, payload := range map[string]string{"no email": noEmail, "email used by another Candidate": takenEmail} {
+		t.Run("webhook: "+name, func(t *testing.T) {
+			if rec := postWebhook(t, router, payload, true); rec.Code != http.StatusOK {
+				t.Errorf("status = %d, want 200 (acknowledged, not retried); %s", rec.Code, rec.Body)
+			}
+		})
+	}
+
+	t.Run("nothing stored for them", func(t *testing.T) {
+		for _, id := range []string{"user_phone_only", "user_alice2"} {
+			n, _ := s.DB.Collection(store.UsersCollection).CountDocuments(ctx, bson.D{{Key: "_id", Value: id}})
+			if n != 0 {
+				t.Errorf("%s was stored", id)
+			}
+		}
+	})
+
+	t.Run("on-demand sync with a taken email", func(t *testing.T) {
+		rec := asCandidate(t, router, http.MethodGet, "/me", "user_alice2")
+		if rec.Code != http.StatusNotFound || decode[errorJSON](t, rec).Error.Code != "candidate_not_found" {
+			t.Errorf("got %d %s", rec.Code, rec.Body)
+		}
+	})
 }

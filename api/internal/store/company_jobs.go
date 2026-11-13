@@ -62,11 +62,16 @@ func (s *Store) ListCompanyJobs(ctx context.Context, companyID bson.ObjectID) ([
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.D{{Key: "companyId", Value: companyID}}}},
 		{{Key: "$sort", Value: bson.D{{Key: "date", Value: -1}}}},
+		// Count inside the $lookup, so Application documents are never loaded.
 		{{Key: "$lookup", Value: bson.D{
 			{Key: "from", Value: JobApplicationsCollection}, {Key: "localField", Value: "_id"},
-			{Key: "foreignField", Value: "jobId"}, {Key: "as", Value: "applications"},
+			{Key: "foreignField", Value: "jobId"},
+			{Key: "pipeline", Value: mongo.Pipeline{{{Key: "$count", Value: "n"}}}},
+			{Key: "as", Value: "applications"}, // [] or [{n: <count>}]
 		}}},
-		{{Key: "$addFields", Value: bson.D{{Key: "applicationCount", Value: bson.D{{Key: "$size", Value: "$applications"}}}}}},
+		{{Key: "$addFields", Value: bson.D{{Key: "applicationCount", Value: bson.D{
+			{Key: "$ifNull", Value: bson.A{bson.D{{Key: "$first", Value: "$applications.n"}}, 0}},
+		}}}}},
 		{{Key: "$project", Value: bson.D{{Key: "applications", Value: 0}}}},
 	}
 	cur, err := s.DB.Collection(JobsCollection).Aggregate(ctx, pipeline)

@@ -19,7 +19,8 @@ type CandidateProfile struct {
 	Image string
 }
 
-// UpsertCandidate creates or updates a Candidate from Clerk data.
+// UpsertCandidate creates or updates a Candidate from Clerk data. Returns
+// ErrEmailTaken when another Candidate document already has the email.
 // Safe to repeat: a retried webhook never duplicates the document or
 // clears an uploaded resume.
 func (s *Store) UpsertCandidate(ctx context.Context, p CandidateProfile) error {
@@ -36,6 +37,9 @@ func (s *Store) UpsertCandidate(ctx context.Context, p CandidateProfile) error {
 		}},
 	}
 	_, err := s.DB.Collection(UsersCollection).UpdateByID(ctx, p.ID, update, options.UpdateOne().SetUpsert(true))
+	if mongo.IsDuplicateKeyError(err) {
+		return ErrEmailTaken // users.email is unique
+	}
 	if err != nil {
 		return fmt.Errorf("upsert candidate %s: %w", p.ID, err)
 	}

@@ -15,7 +15,11 @@ export default function AddJobForm() {
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  function onSubmit(formData: FormData) {
+  // A plain onSubmit, not <form action>: React 19 resets the fields after a
+  // form action returns, which would wipe them even when validation fails.
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     const job = {
       title: String(formData.get("title") ?? ""),
       description: editor.current?.root.innerHTML ?? "",
@@ -38,7 +42,7 @@ export default function AddJobForm() {
   }
 
   return (
-    <form ref={form} action={onSubmit} className="container p-4 flex flex-col w-full items-start gap-3">
+    <form ref={form} onSubmit={onSubmit} className="container p-4 flex flex-col w-full items-start gap-3">
       <div className="w-full">
         <label className="block mb-2" htmlFor="title">Job Title</label>
         <input id="title" name="title" className="w-full max-w-lg px-3 py-2 border-2 border-gray-300 rounded-sm" type="text" placeholder="Type here" required />

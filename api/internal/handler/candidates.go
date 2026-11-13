@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -84,7 +85,11 @@ func loadCandidate(ctx context.Context, s CandidateStore, fetch FetchClerkUser, 
 	if err != nil {
 		return store.Candidate{}, err // store.ErrNotFound when Clerk does not know them either
 	}
-	if err := s.UpsertCandidate(ctx, u.Profile()); err != nil {
+	if err := syncCandidate(ctx, s, u); err != nil {
+		if errors.Is(err, errUnusableClerkUser) {
+			slog.Warn("clerk user not synced", "id", id, "err", err)
+			return store.Candidate{}, store.ErrNotFound // answered as candidate_not_found
+		}
 		return store.Candidate{}, err
 	}
 	return s.GetCandidate(ctx, id)

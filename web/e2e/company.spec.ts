@@ -67,6 +67,9 @@ test.describe("signed in as Acme", () => {
     await page.getByLabel("Job Salary").fill("1");
     await page.getByRole("button", { name: "ADD" }).click();
     await expect(page.getByText("required")).toBeVisible(); // field error under the editor
+    // What was typed is kept, so the recruiter only has to add the description.
+    await expect(page.getByLabel("Job Title")).toHaveValue("No description");
+    await expect(page.getByLabel("Job Salary")).toHaveValue("1");
   });
 
   test("accepting an Application", async ({ page }) => {
@@ -108,7 +111,10 @@ test("signing up a new Company with a logo", async ({ page }) => {
   await expect(page.getByText("Welcome, E2E Company!")).toBeVisible();
   await expect(page.getByText("No Jobs posted yet")).toBeVisible();
   // The logo was stored (on disk in e2e) and is shown in the header.
-  await expect(page.getByRole("button", { name: "Account menu" }).locator("img")).toHaveAttribute("src", /uploads/);
+  const logoImg = page.getByRole("button", { name: "Account menu" }).locator("img");
+  await expect(logoImg).toHaveAttribute("src", /uploads/);
+  // ...and actually loads (a broken image has naturalWidth 0).
+  await expect.poll(() => logoImg.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBeGreaterThan(0);
 });
 
 test("signing up with a taken email goes back to step one", async ({ page }) => {

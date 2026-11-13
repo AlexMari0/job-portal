@@ -31,6 +31,10 @@ var emailPattern = regexp.MustCompile(`^\S+@\S+\.\S+$`)
 
 const minPasswordLength = 6
 
+// bcrypt only uses the first 72 bytes. Node's bcrypt cut longer passwords
+// silently; Go's refuses them, so reject them up front with a clear message.
+const maxPasswordBytes = 72
+
 func emailTaken(w http.ResponseWriter) {
 	writeError(w, http.StatusConflict, "email_taken", "A Company with this email is already registered")
 }
@@ -57,6 +61,8 @@ func RegisterCompany(s RegisterStore, tokens TokenIssuer, up Uploader) http.Hand
 		}
 		if len(password) < minPasswordLength {
 			fields["password"] = "must be at least 6 characters"
+		} else if len(password) > maxPasswordBytes {
+			fields["password"] = "must be at most 72 bytes (about 72 letters)"
 		}
 		if len(fields) > 0 {
 			writeValidationError(w, fields)

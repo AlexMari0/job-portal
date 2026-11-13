@@ -179,3 +179,21 @@ func TestCompanyRoutesWithoutTokensConfigured(t *testing.T) {
 		}
 	}
 }
+
+// Node's bcrypt (used by Express) silently cut passwords at 72 bytes, so a
+// Company may have signed up with a longer one. Go's bcrypt refuses passwords
+// over 72 bytes, so login must cut them the same way to keep working.
+func TestCompanyLoginWithPasswordOver72Bytes(t *testing.T) {
+	s := testdb.New(t)
+	const hashOf80xs = "$2b$10$reN40CqxhgX1whgD9MmJwez3j8Sa.QQn1DEN9gIwK54LU7MP1hmCS" // Node bcrypt
+	testdb.Insert(t, s, store.CompaniesCollection, bson.D{
+		{Key: "_id", Value: bson.NewObjectID()}, {Key: "name", Value: "Long"}, {Key: "email", Value: "long@pw.test"},
+		{Key: "image", Value: "https://img/x.png"}, {Key: "password", Value: hashOf80xs}, {Key: "__v", Value: int32(0)},
+	})
+	router := newCompanyRouter(s)
+
+	body := `{"email":"long@pw.test","password":"` + strings.Repeat("x", 80) + `"}`
+	if rec := postJSON(t, router, "/companies/login", body); rec.Code != http.StatusOK {
+		t.Errorf("login = %d %s", rec.Code, rec.Body)
+	}
+}

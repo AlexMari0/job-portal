@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import JobCard from "@/components/JobCard";
 import Navbar from "@/components/Navbar";
-import { getJob, getJobs, getMe, getMyApplications, type Job } from "@/lib/api";
+import { getJob, getJobs, getMe, getMyApplications, optional, type Job } from "@/lib/api";
 import { timeAgo } from "@/lib/jobs";
 import ApplyButton from "./ApplyButton";
 
@@ -32,7 +32,14 @@ export default function JobPage({ params }: PageProps<"/jobs/[id]">) {
 async function JobDetail({ params }: { params: PageProps<"/jobs/[id]">["params"] }) {
   const { id } = await params;
   // Independent requests run in parallel.
-  const [job, session, me, applications] = await Promise.all([getJob(id), auth(), getMe(), getMyApplications()]);
+  // The Job is public: if the Candidate endpoints fail, show it as for a
+  // signed-out visitor rather than an error page.
+  const [job, session, me, applications] = await Promise.all([
+    getJob(id),
+    auth(),
+    optional(getMe(), null),
+    optional(getMyApplications(), []),
+  ]);
   if (!job) notFound(); // unknown or Hidden Job → 404 page
 
   const appliedJobIds = new Set(applications.map((a) => a.job.id));

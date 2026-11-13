@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -121,7 +123,13 @@ func ClerkWebhook(secret string, candidates CandidateSyncer) http.Handler {
 
 		switch ev.Type {
 		case "user.created", "user.updated":
-			err = candidates.UpsertCandidate(r.Context(), user.Profile())
+			err = syncCandidate(r.Context(), candidates, user)
+			if errors.Is(err, errUnusableClerkUser) {
+				// Retrying cannot fix this: acknowledge, and report it.
+				slog.Warn("clerk user not synced", "id", user.ID, "err", err)
+				reportError(r, err)
+				err = nil
+			}
 		case "user.deleted":
 			err = candidates.DeleteCandidate(r.Context(), user.ID)
 		default:
@@ -134,4 +142,25 @@ func ClerkWebhook(secret string, candidates CandidateSyncer) http.Handler {
 		}
 		w.WriteHeader(http.StatusOK)
 	})
+}
+
+// errUnusableClerkUser marks Clerk users we cannot store as Candidates: no
+// email (Candidates need one), or an email another Candidate document uses.
+var errUnusableClerkUser = errors.New("clerk user cannot be stored as a Candidate")
+
+type candidateUpserter interface {
+	UpsertCandidate(ctx context.Context, p store.CandidateProfile) error
+}
+
+// syncCandidate stores a Clerk user as a Candidate.
+func syncCandidate(ctx context.Context, candidates candidateUpserter, u ClerkUser) error {
+	p := u.Profile()
+	if p.Email == "" {
+		return fmt.Errorf("%w: %s has no email address", errUnusableClerkUser, u.ID)
+	}
+	err := candidates.UpsertCandidate(ctx, p)
+	if errors.Is(err, store.ErrEmailTaken) {
+		return fmt.Errorf("%w: %s uses an email another Candidate has", errUnusableClerkUser, u.ID)
+	}
+	return err
 }

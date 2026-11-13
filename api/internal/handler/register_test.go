@@ -98,6 +98,19 @@ func TestRegisterCompanyRejects(t *testing.T) {
 		}
 	})
 
+	t.Run("password over bcrypt's 72-byte limit", func(t *testing.T) {
+		up := &fakeUploader{}
+		fields := map[string]string{"name": "Long", "email": "long@initech.test", "password": strings.Repeat("é", 40)} // 80 bytes
+		rec := registerRequest(t, newRegisterRouter(s, up), fields, pngBytes)
+		e := decode[validationJSON](t, rec)
+		if rec.Code != http.StatusBadRequest || e.Error.Fields["password"] == "" {
+			t.Errorf("got %d %s", rec.Code, rec.Body)
+		}
+		if up.body != nil {
+			t.Error("logo uploaded for a rejected password")
+		}
+	})
+
 	t.Run("invalid fields", func(t *testing.T) {
 		up := &fakeUploader{}
 		rec := registerRequest(t, newRegisterRouter(s, up), map[string]string{"name": " ", "email": "not-an-email", "password": "12345"}, pngBytes)
